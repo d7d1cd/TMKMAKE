@@ -15,15 +15,14 @@
 /* INVOCATION:     CALL TMKINST OBJL                                 */
 /*                                                                   */
 /*********************************************************************/
-TMKINST:     PGM      PARM(&OBJL)
+TMKINST:     PGM      PARM(&SRCL &OBJL)
+             DCL      VAR(&SRCL)           TYPE(*CHAR) LEN(10)
              DCL      VAR(&OBJL)           TYPE(*CHAR) LEN(10)
- 
+
 /*********** CREATE LIBRARY ******************************************/
              MONMSG   MSGID(CPF2111)      EXEC(GOTO CMDLBL(CHKCRTCPGM))
-             CRTLIB   LIB(&OBJL)          TEXT('MAKE UTILITY LIBRARY')
- 
+
 /*********** CREATE ALL C AND CL PROGRAMS ****************************/
- 
  CHKCRTCPGM: CHKOBJ   OBJ(QSYS/CRTCMOD)    OBJTYPE(*CMD)
              MONMSG   MSGID(CPF0000) EXEC(DO)
              SNDPGMMSG   MSGID(CPF9898) MSGF(QCPFMSG) +
@@ -31,20 +30,20 @@ TMKINST:     PGM      PARM(&OBJL)
                       MSGDTA('CRTCMOD COMMAND MUST EXIST TO CREATE +
                       MAKE utility' )
              ENDDO
- 
-            CRTCMOD  MODULE(&OBJL/TMKMAKEC)  SRCFILE(QUSRTOOL/QATTSYSC)
-            CRTCMOD  MODULE(&OBJL/TMKMAKER)  SRCFILE(QUSRTOOL/QATTSYSC)
-            CRTCMOD  MODULE(&OBJL/TMKPARSE)  SRCFILE(QUSRTOOL/QATTSYSC)
-            CRTCMOD  MODULE(&OBJL/TMKFILE)   SRCFILE(QUSRTOOL/QATTSYSC)
-            CRTCMOD  MODULE(&OBJL/TMKBUILT)  SRCFILE(QUSRTOOL/QATTSYSC)
-            CRTCMOD  MODULE(&OBJL/TMKMSGHD)  SRCFILE(QUSRTOOL/QATTSYSC)
-            CRTCMOD  MODULE(&OBJL/TMKDICT)   SRCFILE(QUSRTOOL/QATTSYSC)
-            CRTCMOD  MODULE(&OBJL/TMKOPTIO)  SRCFILE(QUSRTOOL/QATTSYSC)
-            CRTCMOD  MODULE(&OBJL/TMKUTIL)   SRCFILE(QUSRTOOL/QATTSYSC)
-            CRTCMOD  MODULE(&OBJL/TMKEXPR)   SRCFILE(QUSRTOOL/QATTSYSC)
-            CRTCLPGM PGM(&OBJL/TMKTCHMB)  SRCFILE(QUSRTOOL/QATTCL)
-            CRTCLPGM PGM(&OBJL/TMKTCHOB)  SRCFILE(QUSRTOOL/QATTCL)
- 
+
+            CRTCMOD  MODULE(&OBJL/TMKMAKEC)  SRCFILE(&SRCL/QATTSYSC)
+            CRTCMOD  MODULE(&OBJL/TMKMAKER)  SRCFILE(&SRCL/QATTSYSC)
+            CRTCMOD  MODULE(&OBJL/TMKPARSE)  SRCFILE(&SRCL/QATTSYSC)
+            CRTCMOD  MODULE(&OBJL/TMKFILE)   SRCFILE(&SRCL/QATTSYSC)
+            CRTCMOD  MODULE(&OBJL/TMKBUILT)  SRCFILE(&SRCL/QATTSYSC)
+            CRTCMOD  MODULE(&OBJL/TMKMSGHD)  SRCFILE(&SRCL/QATTSYSC)
+            CRTCMOD  MODULE(&OBJL/TMKDICT)   SRCFILE(&SRCL/QATTSYSC)
+            CRTCMOD  MODULE(&OBJL/TMKOPTIO)  SRCFILE(&SRCL/QATTSYSC)
+            CRTCMOD  MODULE(&OBJL/TMKUTIL)   SRCFILE(&SRCL/QATTSYSC)
+            CRTCMOD  MODULE(&OBJL/TMKEXPR)   SRCFILE(&SRCL/QATTSYSC)
+            CRTCLPGM PGM(&OBJL/TMKTCHMB)  SRCFILE(&SRCL/QATTCL)
+            CRTCLPGM PGM(&OBJL/TMKTCHOB)  SRCFILE(&SRCL/QATTCL)
+
 /*********** BINDING ALL C PROGRAMS **********************************/
              CRTPGM       PGM(&OBJL/TMKMAKEC) +
                           MODULE((&OBJL/TMKMAKER) (&OBJL/TMKFILE) +
@@ -52,13 +51,13 @@ TMKINST:     PGM      PARM(&OBJL)
                           (&OBJL/TMKBUILT) (&OBJL/TMKDICT)       +
                           (&OBJL/TMKUTIL)   (&OBJL/TMKMSGHD)     +
                           (&OBJL/TMKEXPR) (&OBJL/TMKMAKEC))
- 
+
 /*********** CREATE QMAKSRC FILE AND ADD BUILTIN IN QMAKSRC **********/
              CHKOBJ     OBJ(&OBJL/QMAKSRC) OBJTYPE(*FILE)
              MONMSG     MSGID(CPF9801)     EXEC(DO)
              CRTSRCPF   FILE(&OBJL/QMAKSRC) TEXT('MAKE TOOL BUITLIN')
              ENDDO
-             CPYSRCF    FROMFILE(QUSRTOOL/QATTSYSC) +
+             CPYSRCF    FROMFILE(&SRCL/QATTSYSC) +
                           TOFILE(&OBJL/QMAKSRC)     +
                           FROMMBR(TMKBLTF) TOMBR(BUILTIN)
              MONMSG     MSGID(CPF2888)     EXEC(DO)
@@ -67,13 +66,13 @@ TMKINST:     PGM      PARM(&OBJL)
                       MSGDTA('QMAKSRC in the library cannot be a +
                       DDM file' )
              ENDDO
- 
+
 /*********** CREATE MESSAGE FILE IN USER SPECIFIED LIBRARY ***********/
              CHKOBJ     OBJ(&OBJL/TMKMSGF) OBJTYPE(*MSGF)
              MONMSG     MSGID(CPF0000)     EXEC(GOTO CMDLBL(NOMSGF))
              DLTMSGF    MSGF(&OBJL/TMKMSGF)
 NOMSGF:      CRTMSGF    MSGF(&OBJL/TMKMSGF) TEXT('MAKE TOOL MESSAGES')
- 
+
 /*********** ADD MESSAGES TO MESSAGE FILE ****************************/
 ADDMSGD MSGID(TMK0001) +
   LVL(*CURRENT 01) +
@@ -719,15 +718,15 @@ ably missing ''='' character in output translation macro format. &N Recovery  .-
  . . :   Correct the invalid macro syntax and try again.') +
   MSG('Invalid macro syntax in line &1.') +
   MSGF(&OBJL/TMKMSGF)
- 
+
 /*********** CREATE COMMAND TMKMAKE **********************************/
              CHKOBJ     OBJ(&OBJL/TMKMAKE) OBJTYPE(*CMD)
              MONMSG     MSGID(CPF0000)     EXEC(GOTO CMDLBL(NOCMD))
              DLTCMD     CMD(&OBJL/TMKMAKE)
 NOCMD:       CRTCMD     CMD(&OBJL/TMKMAKE) PGM(&OBJL/TMKMAKEC) +
-                          SRCFILE(QUSRTOOL/QATTCMD) +
+                          SRCFILE(&SRCL/QATTCMD) +
                           PMTFILE(&OBJL/TMKMSGF)
 /*********** CREATE TMKDLT *******************************************/
-             CRTCLPGM   PGM(&OBJL/TMKDLT)  SRCFILE(QUSRTOOL/QATTCL)
+             CRTCLPGM   PGM(&OBJL/TMKDLT)  SRCFILE(&SRCL/QATTCL)
 ENDPGM
- 
+
