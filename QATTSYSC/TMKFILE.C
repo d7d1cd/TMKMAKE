@@ -13,16 +13,16 @@
 /*              definition as required by the make program.          */
 /*                                                                   */
 /* ================================================================= */
- 
- 
- 
+
+
+
 #include        <stdio.h>
 #include        <stdlib.h>
 #include        <string.h>
 #include        <ctype.h>
 #include        <signal.h>
 #include        <recio.h>
- 
+
 #include        "tmkhopna.qattsysc"
 #include        "tmkhbase.qattsysc"
 #include        "tmkhutil.qattsysc"
@@ -32,23 +32,23 @@
 #include        "tmkhmake.qattsysc"
 #include        "tmkhopti.qattsysc"
 #include        "tmkhmsgh.qattsysc"
- 
- 
+
+
 /***********************************************************************
         Variables definitions
 ***********************************************************************/
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    valid_name ()                                       */
 /* ================================================================= */
- 
+
 Static
 Char    *valid_name ( Char *txt, Int16 *sz ) {
         Char    *tp     = txt;
         Char    *rp;
         Int16   len     = 0;
- 
+
 #ifdef SRVOPT
         if( srvopt_function() )
             printf("FCT:valid_name(\"%s\",Int16 *sz)\n", txt );
@@ -60,13 +60,13 @@ Char    *valid_name ( Char *txt, Int16 *sz ) {
         }
         else {
             ++tp;                /* skip the first character          */
- 
+
             /* following characters must be A-Z, a-z, 0-9, _, $ and @.*/
             /*  accomodate $$(@) -> () are valid character in name    */
             while( *tp ) {
                 if( !( isalnum( *tp ) ЌЌ look_for( "$@_", *tp ) ) ) {
                     Char  *mp = has_dyn_macro( tp - 1 );
- 
+
                     /* has_dyn_macro find macro anywhere in string    */
                     /* make sure it is found at the beginning         */
                     if( mp == NULL ЌЌ mp != ( tp - 1 ) ) {
@@ -82,19 +82,19 @@ Char    *valid_name ( Char *txt, Int16 *sz ) {
             rp   = ( len == 0 ЌЌ len > 10 ) ? NULL : tp;
         }
         *sz  = len;
- 
+
 #ifdef SRVOPT
         if( srvopt_fctrtn() )
             printf("RTN:valid_name:\"%s\",%d\n", rp?rp:"NULL", len );
 #endif
         return( rp );
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    namecpy ()                                          */
 /* ================================================================= */
- 
+
 Static
 Char    *namncpy ( Char *d, Char *s, Int16 sz ) {
 #ifdef SRVOPT
@@ -114,8 +114,8 @@ Char    *namncpy ( Char *d, Char *s, Int16 sz ) {
 #endif
         return( d );
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    parse_obj_name ()                                   */
 /* ================================================================= */
@@ -128,9 +128,9 @@ Char    *namncpy ( Char *d, Char *s, Int16 sz ) {
         spec.  The routine retures NULL if file spec can not be located.
         Any user defined target which is not an object specification,
         i.e. cleanup_the_makefile:, will fail via this function call.
- 
+
         File name specification:
- 
+
  ----------------------Member.File-------------------------------------->
    |             |  |               +-<FILE-------------------->-+   |
    |-*LIBL-----/-+  |                  ====  +-,seu_src_type-+       |
@@ -156,18 +156,18 @@ Char    *namncpy ( Char *d, Char *s, Int16 sz ) {
                                       |--<LIBFILE>--|
                                       |  =========  |
                                       +--<TXTLIB>---+
- 
+
   NOTE:
     Where seu_src_type is the SEU source type tagged to the members
           of a *FILE object. E.g. C, CLP, TXT ...
     <PGMSET> is a dummy qualifier to resolve the SETPGMINF problem
           for EPM languages (e.g. C/400, Pascal), see AS/400 Specific
           Topics section.
- 
+
   A valid object name must begin with the character A-Z, a-z, $ or @
   and can be followed by A-Z, a-z, 0-9, $, @ or _ character.
 ***********************************************************************/
- 
+
 Char    *parse_obj_name ( Char *f, File_spec_t *fs,
                           Int16 *len, Int16 line ) {
         Char            *orgp   = f;
@@ -180,7 +180,7 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
 #define OBJ_LIBFILE     1
 #define OBJ_PGM         2
 #define OBJ_INVALID     3
- 
+
 #ifdef SRVOPT
         if( srvopt_function() )
             printf("FCT:parse_obj_name(\"%s\",File_spec_t *fs,"
@@ -193,12 +193,12 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
         fs->seu_typeы0Е =  0;
         fs->obj_type    = '*';
         fs->is_file     = FALSE;
- 
+
         if( ( tp = valid_name( f, &sz ) ) == NULL ) {
             /* not a valid object name                                */
             return( NULL );
         }
- 
+
         /* check for library qualified name in spec.                  */
         if( *tp == '/' ) {
             namncpy( fs->lib, f, sz );
@@ -208,7 +208,7 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
                 exit( TMK_EXIT_FAILURE );
             }
         }
- 
+
         switch( *tp ) {
         case '.'        :
             /* data base file object specification                    */
@@ -223,7 +223,7 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
             fs->is_file = TRUE;
             type_id  = OBJ_DB;
             break;
- 
+
         case '('        :
             /* library member object specification                    */
             namncpy( fs->file, f, sz );
@@ -244,7 +244,7 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
             strcpy( fs->type, FS_T_PGM );
             type_id  = OBJ_PGM;
         }
- 
+
         /* base file spec parser; look for qualifier                  */
         if( *tp == '<' ) {
             f  = ++tp;
@@ -255,7 +255,7 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
                 log_error( INV_OBJ_SPEC, NULL, line );
                 exit( TMK_EXIT_FAILURE );
             }
- 
+
             /* special processing for <FILE.... type                  */
             if( memcmp( f, FS_T_FILE, sizeof( FS_T_FILE ) - 1 ) == 0 ) {
                 if( *tp != ',' && *tp != '>' ) {
@@ -270,7 +270,7 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
                     /* update the file member name to be 0            */
                     *fs->extmbr = 0;
                     break;
- 
+
                 case OBJ_DB      :
                     if( *tp == ',' ) {
                         /* parse the seu type                         */
@@ -302,7 +302,7 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
             }
             ++tp;              /* skip over the '>' limiter           */
         }
- 
+
         /* if the next character is not a white space, still not a    */
         /* valid object name, return null                             */
         if( *tp != 0 && ! isspace( *tp ) ) {
@@ -311,7 +311,7 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
         /* set up return parameters                                   */
         *len    = tp - orgp;
         rp      = skip_white_spaces( tp );
- 
+
 #ifdef SRVOPT
         if( srvopt_fctrtn() )
             printf("RTN:parse_obj_name:\"%s\"\n  %s,%d\n",
@@ -319,8 +319,8 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
 #endif
         return( rp );
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    parse_file_ext ()                                   */
 /* ================================================================= */
@@ -332,15 +332,15 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
         operations and return the character position starts looking for
         the next file spec.  The routine retures NULL if file spec can
         not be located.
- 
+
         Inference rule specification:
- 
+
   <---ObjectSpec--------------------------------------------------->
                              |              |
                              +--ObjectSpec--+
- 
+
     Where ObjectSpec is defined as
- 
+
      ----.--------FileName----------------------------------------->
              |              +--<FILE-------------------->--+  |
              |                  ====  +-,seu_src_type-+       |
@@ -355,20 +355,20 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
              |-----------------<DTAARA>-----------------------|
              |-----------------<DSPF>-------------------------|
              +-----------------.........----------------------+
- 
+
  NOTE:
    Where seu_src_type is the SEU source type tagged to the members
          of a <*FILE> object. E.g. C, CLP, TXT ...
    <PGMSET> is a dummy qualifier to resolve SETPGMINF problem
          for EPM languages (e.g. C/400, Pascal), see AS/400 Specific
          Topics section.
- 
+
 ***********************************************************************/
- 
+
 Char    *parse_file_ext ( Char *f, File_spec_t *fs ) {
         Char    *tp;
         Int16   sz;
- 
+
 #ifdef SRVOPT
         if( srvopt_function() )
             printf("FCT:parse_file_ext(\"%s\",File_spec_t *fs"
@@ -381,13 +381,13 @@ Char    *parse_file_ext ( Char *f, File_spec_t *fs ) {
         fs->seu_typeы0Е =  0;
         fs->obj_type    = '*';
         fs->is_file     = FALSE;
- 
+
         if( ( tp = valid_name( f, &sz ) ) != NULL ) {
             /* *FILE object rule, parse <FILE,seutype>                */
             namncpy( fs->file, f, sz );
             strcpy( fs->type, FS_T_FILE );
             fs->is_file = TRUE;
- 
+
             if( *tp == '<' ) {
                 /* special processing for <FILE.... type                  */
                 ++tp;
@@ -447,12 +447,12 @@ Char    *parse_file_ext ( Char *f, File_spec_t *fs ) {
 #endif
         return( tp );
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    parse_inference_rule ()                             */
 /* ================================================================= */
- 
+
 Boolean parse_inference_rule ( Char *f, File_spec_t *fsd,
                                         File_spec_t *fst ) {
 #ifdef SRVOPT
@@ -469,7 +469,7 @@ Boolean parse_inference_rule ( Char *f, File_spec_t *fsd,
         if( *f++ == '.' ) {
             return( parse_file_ext( f, fst ) != NULL );
         }
- 
+
         /* single extension inference rule e.g. ".c"            */
         fst->libы0Е      =
         fst->fileы0Е     =
@@ -480,18 +480,18 @@ Boolean parse_inference_rule ( Char *f, File_spec_t *fsd,
         strcpy( fst->type, FS_T_PGM );
         return( TRUE );
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    axtoi ()                                            */
 /* ================================================================= */
- 
+
 Boolean obj_not_exist_flag;
- 
+
 Static  Int32   axtoi( Char *bp ) {
         Int32   ri = 0;
         Int16   cnt = 4;
- 
+
         while( cnt-- ) {
                 ri      <<= 4;
                 ri      += isdigit( *bp ) ? *bp - '0'
@@ -500,15 +500,15 @@ Static  Int32   axtoi( Char *bp ) {
         }
         return( ri );
 }
- 
- 
- 
- 
- 
+
+
+
+
+
 /* ================================================================= */
 /*  Function:    obj_not_exist_trap ()                               */
 /* ================================================================= */
- 
+
 Void    obj_not_exist_trap ( int sig ) {
 #ifdef __ILEC400__
         _INTRPT_Hndlr_Parms_T excinfo; /* pointer to exception data  */
@@ -518,7 +518,7 @@ Void    obj_not_exist_trap ( int sig ) {
         sigact_t        *act;   /* pointer to exception action area   */
 #endif
         Int32           cpfmsg;
- 
+
         /* Set ptr to sigdata structure                               */
 #ifdef __ILEC400__
         _GetExcData (&excinfo);
@@ -545,15 +545,15 @@ Void    obj_not_exist_trap ( int sig ) {
                 /* exception handling                                 */
             return;
         }
- 
+
 #ifdef __ILEC400__
         cpfmsg  += axtoi( excinfo.Msg_Id + 3 );
 #else
         cpfmsg  += axtoi( data->exmsg->exmsgid + 3 );
 #endif
- 
+
         if( cpfmsg >= 0x09800 && 0x09826 >= cpfmsg ) {
- 
+
             obj_not_exist_flag      = LSTOBJ_NOT_FOUND;
         }
         else {
@@ -581,7 +581,7 @@ Void    obj_not_exist_trap ( int sig ) {
                 return;
             }
         }
- 
+
 #ifdef __ILEC400__
         errcode.rtn_area_sz = 0;
         QMHCHGEM (&(excinfo.Target),
@@ -611,12 +611,12 @@ Void    obj_not_exist_trap ( int sig ) {
                 1;
 #endif
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    update_file_date ()                                 */
 /* ================================================================= */
- 
+
 Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
 #ifdef  DEBUG
         Boolean         last_debug = TRUE;
@@ -637,7 +637,7 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
         Char            lib_dateы13Е;     /* txtlib member date format*/
         Boolean         rv;               /* return value             */
         int             error_code;       /* error code for QUSRMBRD  */
- 
+
 #ifdef SRVOPT
         if( srvopt_function() )
             printf("FCT:update_file_date(%s)\n",srv_fs(fs));
@@ -646,7 +646,7 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
         set_date( &fs->last_update,  0L );
         set_date( &fs->create_date,  0L );
         set_date( &fs->proc_update,  0L );
- 
+
         /* if the object name is a non-system object name e.g.        */
         /*  this_is_just_another_target:     dependents.....          */
         /* detect right away and return FALSE                         */
@@ -655,14 +655,14 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
             /* the trouble to retrieve date, return FALSE             */
             return( FALSE );
         }
- 
+
         /* initialize default return date and test object name        */
         memset( md.change_date, '0', 13 );
         memset( md.crt_date,    '0', 13 );
         memset( obj_name,       ' ', FILE_NM_SZ + FILE_NM_SZ );
         memset( obj_mbr,        ' ', FILE_NM_SZ );
         memset( obj_type,       ' ', FILE_NM_SZ );
- 
+
         /* set default library (i.e. *LIBL) if not defined            */
         if( fs->libы0Е == 0 )
             memcpy( obj_name + 10, FS_L_LIBL, sizeof( FS_L_LIBL ) - 1 );
@@ -672,34 +672,34 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
         obj_name_toupper( obj_name, sizeof( obj_name ) );
         memcpy( obj_mbr, fs->extmbr, strlen( fs->extmbr ) );
         obj_name_toupper( obj_mbr, sizeof( obj_mbr ) );
- 
+
         /* default object type set up                                 */
         o_type = &fs->obj_type;
- 
+
         /* set up signal handler                                      */
         obj_not_exist_flag      = LSTOBJ_FOUND;
         old_signal_fct  = signal( SIGALL, &obj_not_exist_trap );
- 
+
         if( fs->is_file ) {
             /* get file last update date from system API if no member */
             /* is specified                                           */
- 
+
             if ( *fs->extmbr == 0 ) {
- 
+
                 /* General path to look for system object last update */
                 /* via system APIs                                    */
                 memset( od.change_date, '0', 13 );
                 memset( od.creation_date, '0', 13 );
                 memcpy( obj_type, (const void *)o_type,
                                  strlen( (const char *) o_type ) );
- 
+
                 obj_not_exist_flag = LSTOBJ_FOUND;
                 QUSROBJD( (char *)&od, sizeof(od), "OBJD0100",
                           (char *)obj_name, obj_type );
- 
+
                 cd      = od.creation_date;
                 ud      = od.change_date;
- 
+
                 switch( obj_not_exist_flag ) {
                 case LSTOBJ_FOUND        :
                     set_date( &fs->last_update,
@@ -717,12 +717,12 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
                 /* get file member last update date from system API   */
                 cd      = md.crt_date;
                 ud      = md.change_date;
- 
+
 #if     DEBUG
                     last_debug      = TRUE;
 #endif
                     error_code = 0;
- 
+
                     obj_not_exist_flag      = LSTOBJ_FOUND;
                     signal( SIGALL, &obj_not_exist_trap );
                     QUSRMBRD( (char *)&md, (int)sizeof( md ), "MBRD0100",
@@ -769,7 +769,7 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
                 Char  hashы4Е;
                 Char  crtdattimы16Е;
             } rbuf;
- 
+
             /* get EPM LIBFILE and/or LIBFILE member last update date */
             /* if LIBFILE without member, get LIBFILE object date     */
             if( *fs->extmbr == 0 ) {
@@ -782,7 +782,7 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
                 /* get file member last update date from system API   */
                 cd      = md.crt_date;
                 ud      = md.change_date;
- 
+
                 /* Get all the instances of the file in the library    */
                 /* list and find the first hit which match the member  */
                 /* name                                                */
@@ -793,7 +793,7 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
                 list_obj  = (OBJL0100 *)(((char *)list_header) +
                                     list_header->list_section_offset );
                 obj_count = list_header->number_of_entries;
- 
+
                 while( obj_count-- ) {                                */
                     /* for all instance of *FILE in *LIBL, pick the   */
                     /* first one found with specified member name     */
@@ -819,7 +819,7 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
                            log_error( INV_OBJ_SPEC, NULL, line );
                            exit( TMK_EXIT_FAILURE );
                        }
- 
+
                        /* memeber not found in current *FILE, search next*/
                        if( opt_debug() ) {
                            sprintf( txtbuf, "%20.20s/%-10.10s%9.9s/"
@@ -839,7 +839,7 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
                 memset( lib_date, '0', sizeof( lib_date ) );
                 cd =
                 ud = lib_date;
- 
+
                 /* code to find out the LIBFILE member last update date */
                 /* must update ud and cd field                          */
                 sprintf( (char *)&rbuf, "%s%s%s", fs->lib,
@@ -899,18 +899,18 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
             LibHdr_T        *lib_header;
             MemList_T       *txtmbr;
             Int32           cnt;
- 
+
             /* if TXTLIB without member, get TXTLIB object date       */
             if( *fs->extmbr == 0 ) {
                 /* need to get date for the TXTLIB object i.e. *USRSPC*/
                 o_type = "*USRSPC";
                 goto gen_get_date;
- 
+
             }
             memset( lib_date, '0', sizeof( lib_date ) );
             cd      =
             ud      = lib_date;
- 
+
             /* generate the list of file as specified       */
             creat_usrspc();
             QUSLOBJ( LST_USRSPC_NM, "OBJL0100", obj_name, "*USRSPC   " );
@@ -918,7 +918,7 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
             list_obj        = (OBJL0100 *)(((char *)list_header) +
                             list_header->list_section_offset );
             obj_count       = list_header->number_of_entries;
- 
+
 #ifdef SRVOPT
         if( srvopt_detail() )
             printf("DTL:update_file_date:txtlib:obj_count=%d\n",
@@ -929,10 +929,10 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
                 last_debug      = TRUE;
 #endif
                 memcpy( obj_name + 10, list_obj->library_name, 10 );
- 
+
                 obj_not_exist_flag      = LSTOBJ_FOUND;
                 signal( SIGALL, &obj_not_exist_trap );
- 
+
                 /* search for the TXTLIB *USRSPC object               */
                 QUSPTRUS( obj_name, &lib_header );
                 if( obj_not_exist_flag == LSTOBJ_FOUND) {
@@ -978,7 +978,7 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
                         /* match next member in TXTLIB list           */
                         ++txtmbr;
                     } /* for( all member in txtlib )                  */
- 
+
                     /* if object found in TXTLIB break out of the     */
                     /* while(obj_count--) loop                        */
                     if( cnt < lib_header->MemberCount )
@@ -1010,14 +1010,14 @@ gen_get_date:
             memset( od.creation_date, '0', 13 );
             memcpy( obj_type, (const void *)o_type,
                              strlen( (const char *) o_type ) );
- 
+
             obj_not_exist_flag = LSTOBJ_FOUND;
             QUSROBJD( (char *)&od, sizeof(od), "OBJD0100",
                       (char *)obj_name, obj_type );
- 
+
             cd      = od.creation_date;
             ud      = od.change_date;
- 
+
             switch( obj_not_exist_flag ) {
             case LSTOBJ_FOUND        :
                 set_date( &fs->last_update,
@@ -1032,7 +1032,7 @@ gen_get_date:
             }
         }
         signal( SIGALL, old_signal_fct );
- 
+
 #ifdef  DEBUG
         if( opt_debug() && last_debug ) {
             sprintf( txtbuf, "%20.20s/%-10.10s%9.9s/c:m=%13.13s/%13.13s",
@@ -1040,7 +1040,7 @@ gen_get_date:
             log_dbg( txtbuf );
         }
 #endif
- 
+
         rv  = get_date( &fs->last_update ) != 0L;
 #ifdef SRVOPT
         if( srvopt_fctrtn() )
@@ -1048,16 +1048,16 @@ gen_get_date:
 #endif
         return( rv );
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    obj_full_name ()                                    */
 /* ================================================================= */
- 
+
 Static  Buf_t   objn_buf        = { NULL, NULL, 0 };
- 
+
 Char    *obj_full_name ( File_spec_t *fs ) {
- 
+
 #ifdef SRVOPT
         if( srvopt_function() )
             printf("FCT:obj_full_name(%s)\n",srv_fs(fs));
@@ -1098,19 +1098,19 @@ Char    *obj_full_name ( File_spec_t *fs ) {
             }
             append_buf( &objn_buf, ">" );
         }
- 
+
 #ifdef SRVOPT
         if( srvopt_fctrtn() )
             printf("RTN:obj_full_name:\"%s\"\n",objn_buf.bp);
 #endif
         return( objn_buf.bp );
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    obj_exists ()                                       */
 /* ================================================================= */
- 
+
 Boolean obj_exists ( File_spec_t *fs, Int16 line ) {
 #ifdef SRVOPT
         if( srvopt_function() )
@@ -1118,19 +1118,19 @@ Boolean obj_exists ( File_spec_t *fs, Int16 line ) {
 #endif
         return( update_file_date( fs, line ) );
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    skip_obj_name ()                                    */
 /* ================================================================= */
- 
+
 Char    *skip_obj_name ( Char *txt ) {
 #ifdef SRVOPT
         if( srvopt_function() )
             printf("FCT:skip_obj_name(\"%s\")\n",txt);
 #endif
         while( *txt && ( isalnum( *txt ) ЌЌ
-                         look_for( "./(),*<>_", *txt ) != NULL ) ) {
+                         look_for( "./(),*<>_$@", *txt ) != NULL ) ) {
             ++txt;
         }
 #ifdef SRVOPT
@@ -1139,30 +1139,30 @@ Char    *skip_obj_name ( Char *txt ) {
 #endif
         return( txt );
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    touch_target ()                                     */
 /* ================================================================= */
- 
+
 #pragma linkage(TMKTCHMB, OS)
 #pragma linkage(TMKTCHOB, OS)
- 
+
 extern void TMKTCHMB ( char *, char *, char * );
 extern void TMKTCHOB ( char *, char *, char * );
- 
+
 Void    touch_target ( Element_t *ep ) {
      File_spec_t *fs;
      char        type??(11??);
      char        file??(10??);
      char        lib??(10??);
      char        mbr??(10??);
- 
+
 #ifdef SRVOPT
         if( srvopt_function() )
             printf("FCT:touch_target(\"%s\")\n",ep->name);
 #endif
- 
+
     fs = &ep->fs;
     if ( *fs->type != 0 )
     {
@@ -1211,8 +1211,8 @@ Void    touch_target ( Element_t *ep ) {
         }
     }
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    same_obj_base ()                                    */
 /* ================================================================= */
@@ -1222,7 +1222,7 @@ Check
     object name base.  i.e   *LIBL/a.c<FILE> and *LIBL/a.h
     have the same base which is *LIBL/a.
 ***********************************************************************/
- 
+
 Boolean same_obj_base ( File_spec_t *tfs, File_spec_t *dfs ) {
         Boolean    rv = FALSE;
 #ifdef SRVOPT
@@ -1250,4 +1250,4 @@ Boolean same_obj_base ( File_spec_t *tfs, File_spec_t *dfs ) {
 #endif
         return( rv );
 }
- 
+
