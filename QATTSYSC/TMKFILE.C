@@ -55,7 +55,7 @@ Char    *valid_name ( Char *txt, Int16 *sz ) {
 #endif
         /* first character must be A-Z, a-z, $ and @. The * character */
         /* is valid for such things as *LIBL, *CURLIB or *FIRST.      */
-        if( *tp == 0 ЌЌ !( isalpha( *tp ) ЌЌ look_for( "$@*", *tp ) ) ) {
+        if( *tp == 0 || !( isalpha( *tp ) || look_for( "$@*", *tp ) ) ) {
             rp = NULL;
         }
         else {
@@ -64,12 +64,12 @@ Char    *valid_name ( Char *txt, Int16 *sz ) {
             /* following characters must be A-Z, a-z, 0-9, _, $ and @.*/
             /*  accomodate $$(@) -> () are valid character in name    */
             while( *tp ) {
-                if( !( isalnum( *tp ) ЌЌ look_for( "$@_", *tp ) ) ) {
+                if( !( isalnum( *tp ) || look_for( "$@_", *tp ) ) ) {
                     Char  *mp = has_dyn_macro( tp - 1 );
 
                     /* has_dyn_macro find macro anywhere in string    */
                     /* make sure it is found at the beginning         */
-                    if( mp == NULL ЌЌ mp != ( tp - 1 ) ) {
+                    if( mp == NULL || mp != ( tp - 1 ) ) {
                         break;
                     }
                     /* dynamic macro found, adjust pointer            */
@@ -79,7 +79,7 @@ Char    *valid_name ( Char *txt, Int16 *sz ) {
             }
             /* also ensure 10 chars max for valid object name         */
             len  = tp - txt;
-            rp   = ( len == 0 ЌЌ len > 10 ) ? NULL : tp;
+            rp   = ( len == 0 || len > 10 ) ? NULL : tp;
         }
         *sz  = len;
 
@@ -103,7 +103,7 @@ Char    *namncpy ( Char *d, Char *s, Int16 sz ) {
 #endif
         if( sz <= FILE_NM_SZ ) {
             strncpy( d, s, sz );
-            dы sz Е = 0;
+            d[ sz ] = 0;
         }
         else {
             *d      = 0;
@@ -186,11 +186,11 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
             printf("FCT:parse_obj_name(\"%s\",File_spec_t *fs,"
                    "Int16 *len,%d)\n",f,line );
 #endif
-        fs->libы0Е      =
-        fs->fileы0Е     =
-        fs->extmbrы0Е   =
-        fs->typeы0Е     =
-        fs->seu_typeы0Е =  0;
+        fs->lib[0]      =
+        fs->file[0]     =
+        fs->extmbr[0]   =
+        fs->type[0]     =
+        fs->seu_type[0] =  0;
         fs->obj_type    = '*';
         fs->is_file     = FALSE;
 
@@ -228,7 +228,7 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
             /* library member object specification                    */
             namncpy( fs->file, f, sz );
             f       = tp + 1;
-            if( ( tp = valid_name( f, &sz ) ) == NULL ЌЌ
+            if( ( tp = valid_name( f, &sz ) ) == NULL ||
                 *tp != ')' ) {
                 /* invalid object specification                       */
                 log_error( INV_OBJ_SPEC, NULL, line );
@@ -248,7 +248,7 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
         /* base file spec parser; look for qualifier                  */
         if( *tp == '<' ) {
             f  = ++tp;
-            if( ( tp = valid_name( f, &sz ) ) == NULL ЌЌ
+            if( ( tp = valid_name( f, &sz ) ) == NULL ||
                 /* can't have '*' character in <TYPE> qualifier       */
                 ( *f == '*' ) ) {
                 /* invalid object specification                       */
@@ -276,7 +276,7 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
                         /* parse the seu type                         */
                         f  = tp + 1;
                         tp = valid_name( f, &sz );
-                        if( tp == NULL ЌЌ sz > SEU_TYP_SZ ЌЌ
+                        if( tp == NULL || sz > SEU_TYP_SZ ||
                               *tp != '>' ) {
                             log_error( INV_OBJ_SPEC, NULL, line );
                             exit( TMK_EXIT_FAILURE );
@@ -298,7 +298,7 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
                     exit( TMK_EXIT_FAILURE );
                 }
                 memcpy( fs->type, f, sz );
-                fs->typeыszЕ = 0;
+                fs->type[sz] = 0;
             }
             ++tp;              /* skip over the '>' limiter           */
         }
@@ -374,11 +374,11 @@ Char    *parse_file_ext ( Char *f, File_spec_t *fs ) {
             printf("FCT:parse_file_ext(\"%s\",File_spec_t *fs"
                    ")\n",f );
 #endif
-        fs->libы0Е      =
-        fs->fileы0Е     =
-        fs->extmbrы0Е   =
-        fs->typeы0Е     =
-        fs->seu_typeы0Е =  0;
+        fs->lib[0]      =
+        fs->file[0]     =
+        fs->extmbr[0]   =
+        fs->type[0]     =
+        fs->seu_type[0] =  0;
         fs->obj_type    = '*';
         fs->is_file     = FALSE;
 
@@ -399,7 +399,7 @@ Char    *parse_file_ext ( Char *f, File_spec_t *fs ) {
                         /* parse the seu type                         */
                         f  = tp + 1;
                         tp = valid_name( f, &sz );
-                        if( tp == NULL ЌЌ sz > SEU_TYP_SZ ЌЌ
+                        if( tp == NULL || sz > SEU_TYP_SZ ||
                               *tp != '>' ) {
                             tp = NULL;
                         }
@@ -425,9 +425,9 @@ Char    *parse_file_ext ( Char *f, File_spec_t *fs ) {
             /* validate object type qualifiers                        */
             if( *f == '<' ) {
                 ++f;
-                if( ( tp = valid_name( f, &sz ) ) == NULL ЌЌ
+                if( ( tp = valid_name( f, &sz ) ) == NULL ||
                       /* can't have '*' character in <TYPE> qualifier */
-                      ( *f == '*' ) ЌЌ
+                      ( *f == '*' ) ||
                       /* must be terminated by '>' delimiter          */
                       ( *tp != '>' ) ) {
                     /* invalid object specification                   */
@@ -471,10 +471,10 @@ Boolean parse_inference_rule ( Char *f, File_spec_t *fsd,
         }
 
         /* single extension inference rule e.g. ".c"            */
-        fst->libы0Е      =
-        fst->fileы0Е     =
-        fst->extmbrы0Е   =
-        fst->seu_typeы0Е =  0;
+        fst->lib[0]      =
+        fst->file[0]     =
+        fst->extmbr[0]   =
+        fst->seu_type[0] =  0;
         fst->obj_type    = '*';
         fst->is_file     = FALSE;
         strcpy( fst->type, FS_T_PGM );
@@ -631,10 +631,10 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
         header_struct   *list_header;     /* system API output lst hdr*/
         OBJL0100        *list_obj;        /* output list object format*/
         Int16           obj_count;        /* list object count        */
-        Char            obj_nameы20Е;     /* input object name for lst*/
-        Char            obj_mbrы10Е;      /* input member name for lst*/
-        Char            obj_typeы10Е;     /* input type name for list */
-        Char            lib_dateы13Е;     /* txtlib member date format*/
+        Char            obj_name[20];     /* input object name for lst*/
+        Char            obj_mbr[10];      /* input member name for lst*/
+        Char            obj_type[10];     /* input type name for list */
+        Char            lib_date[13];     /* txtlib member date format*/
         Boolean         rv;               /* return value             */
         int             error_code;       /* error code for QUSRMBRD  */
 
@@ -664,7 +664,7 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
         memset( obj_type,       ' ', FILE_NM_SZ );
 
         /* set default library (i.e. *LIBL) if not defined            */
-        if( fs->libы0Е == 0 )
+        if( fs->lib[0] == 0 )
             memcpy( obj_name + 10, FS_L_LIBL, sizeof( FS_L_LIBL ) - 1 );
         else
             memcpy( obj_name + 10, fs->lib, strlen( fs->lib ) );
@@ -703,7 +703,7 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
                 switch( obj_not_exist_flag ) {
                 case LSTOBJ_FOUND        :
                     set_date( &fs->last_update,
-                              conv_as400_date( od.change_dateы0Е != ' '
+                              conv_as400_date( od.change_date[0] != ' '
                                ? od.change_date : od.creation_date ) );
                     set_date( &fs->create_date,
                               conv_as400_date( od.creation_date ) );
@@ -731,7 +731,7 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
                     if( obj_not_exist_flag == LSTOBJ_FOUND ) {
                     /* member found, get dates and return             */
                         set_date( &fs->last_update,
-                              conv_as400_date( md.change_dateы0Е != ' '
+                              conv_as400_date( md.change_date[0] != ' '
                                   ? md.change_date : md.crt_date ) );
                         set_date( &fs->create_date,
                               conv_as400_date( md.crt_date ) );
@@ -759,15 +759,15 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
             _RFILE   *rf;
             _RIOFB_T *iofb;
             struct   libf {
-                Char  entrytypeы4Е;
-                Char  publicnameы100Е;
-                Char  pgmnameы10Е;
-                Char  libnameы10Е;
-                Char  languageы10Е;
-                Char  typeы6Е;
-                Char  initы7Е;
-                Char  hashы4Е;
-                Char  crtdattimы16Е;
+                Char  entrytype[4];
+                Char  publicname[100];
+                Char  pgmname[10];
+                Char  libname[10];
+                Char  language[10];
+                Char  type[6];
+                Char  init[7];
+                Char  hash[4];
+                Char  crtdattim[16];
             } rbuf;
 
             /* get EPM LIBFILE and/or LIBFILE member last update date */
@@ -809,7 +809,7 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
                     if( obj_not_exist_flag == LSTOBJ_FOUND ) {
                     /* member found, get dates and return             */
                         set_date( &fs->last_update,
-                              conv_as400_date( md.change_dateы0Е != ' '
+                              conv_as400_date( md.change_date[0] != ' '
                                   ? md.change_date : md.crt_date ) );
                         set_date( &fs->create_date,
                               conv_as400_date( md.crt_date ) );
@@ -843,7 +843,7 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
                 /* code to find out the LIBFILE member last update date */
                 /* must update ud and cd field                          */
                 sprintf( (char *)&rbuf, "%s%s%s", fs->lib,
-                         fs->libы0Е != 0 ? "/" : "", fs->file );
+                         fs->lib[0] != 0 ? "/" : "", fs->file );
 #ifdef SRVOPT
             if( srvopt_detail() )
               printf("DTL:update_file_date:Ropen(%s)\n",(char *)&rbuf);
@@ -867,19 +867,19 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
 #endif
                         if( memcmp( rbuf.publicname, obj_mbr,
                                     sizeof( obj_mbr ) ) == 0 ) {
-                            lib_dateы0Е  = '0';
-                            lib_dateы1Е  = rbuf.crtdattimы6Е;
-                            lib_dateы2Е  = rbuf.crtdattimы7Е;
-                            lib_dateы3Е  = rbuf.crtdattimы0Е;
-                            lib_dateы4Е  = rbuf.crtdattimы1Е;
-                            lib_dateы5Е  = rbuf.crtdattimы3Е;
-                            lib_dateы6Е  = rbuf.crtdattimы4Е;
-                            lib_dateы7Е  = rbuf.crtdattimы8Е;
-                            lib_dateы8Е  = rbuf.crtdattimы9Е;
-                            lib_dateы9Е  = rbuf.crtdattimы11Е;
-                            lib_dateы10Е = rbuf.crtdattimы12Е;
-                            lib_dateы11Е = rbuf.crtdattimы14Е;
-                            lib_dateы12Е = rbuf.crtdattimы15Е;
+                            lib_date[0]  = '0';
+                            lib_date[1]  = rbuf.crtdattim[6];
+                            lib_date[2]  = rbuf.crtdattim[7];
+                            lib_date[3]  = rbuf.crtdattim[0];
+                            lib_date[4]  = rbuf.crtdattim[1];
+                            lib_date[5]  = rbuf.crtdattim[3];
+                            lib_date[6]  = rbuf.crtdattim[4];
+                            lib_date[7]  = rbuf.crtdattim[8];
+                            lib_date[8]  = rbuf.crtdattim[9];
+                            lib_date[9]  = rbuf.crtdattim[11];
+                            lib_date[10] = rbuf.crtdattim[12];
+                            lib_date[11] = rbuf.crtdattim[14];
+                            lib_date[12] = rbuf.crtdattim[15];
                             set_date( &fs->last_update,
                                       conv_as400_date( lib_date ) );
                             fs->create_date = fs->last_update;
@@ -957,19 +957,19 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
                                     strlen( fs->extmbr ) ) == 0 ) {
                             /* convert the TXTLIB date/time format    */
                             /* to our standard date/time format       */
-                            lib_dateы0Е  = '0';
-                            lib_dateы1Е  = txtmbr->Dateы0Е;
-                            lib_dateы2Е  = txtmbr->Dateы1Е;
-                            lib_dateы3Е  = txtmbr->Dateы3Е;
-                            lib_dateы4Е  = txtmbr->Dateы4Е;
-                            lib_dateы5Е  = txtmbr->Dateы6Е;
-                            lib_dateы6Е  = txtmbr->Dateы7Е;
-                            lib_dateы7Е  = txtmbr->Timeы0Е;
-                            lib_dateы8Е  = txtmbr->Timeы1Е;
-                            lib_dateы9Е  = txtmbr->Timeы3Е;
-                            lib_dateы10Е = txtmbr->Timeы4Е;
-                            lib_dateы11Е = txtmbr->Timeы6Е;
-                            lib_dateы12Е = txtmbr->Timeы7Е;
+                            lib_date[0]  = '0';
+                            lib_date[1]  = txtmbr->Date[0];
+                            lib_date[2]  = txtmbr->Date[1];
+                            lib_date[3]  = txtmbr->Date[3];
+                            lib_date[4]  = txtmbr->Date[4];
+                            lib_date[5]  = txtmbr->Date[6];
+                            lib_date[6]  = txtmbr->Date[7];
+                            lib_date[7]  = txtmbr->Time[0];
+                            lib_date[8]  = txtmbr->Time[1];
+                            lib_date[9]  = txtmbr->Time[3];
+                            lib_date[10] = txtmbr->Time[4];
+                            lib_date[11] = txtmbr->Time[6];
+                            lib_date[12] = txtmbr->Time[7];
                             set_date( &fs->last_update,
                                       conv_as400_date( lib_date ) );
                             fs->create_date = fs->last_update;
@@ -1021,7 +1021,7 @@ gen_get_date:
             switch( obj_not_exist_flag ) {
             case LSTOBJ_FOUND        :
                 set_date( &fs->last_update,
-                          conv_as400_date( od.change_dateы0Е != ' '
+                          conv_as400_date( od.change_date[0] != ' '
                              ? od.change_date : od.creation_date ) );
                 set_date( &fs->create_date,
                           conv_as400_date( od.creation_date ) );
@@ -1063,7 +1063,7 @@ Char    *obj_full_name ( File_spec_t *fs ) {
             printf("FCT:obj_full_name(%s)\n",srv_fs(fs));
 #endif
         reset_buf( &objn_buf );
-        if( fs->libы0Е ) {
+        if( fs->lib[0] ) {
                 append_buf( &objn_buf, fs->lib );
                 append_buf( &objn_buf, "/" );
         }
@@ -1081,14 +1081,14 @@ Char    *obj_full_name ( File_spec_t *fs ) {
              }
         }
         /* append type qualifer for name                              */
-        if( *fs->seu_type != 0 ЌЌ
+        if( *fs->seu_type != 0 ||
             /* append only if not the default types i.e. <FILE>,      */
             /* <PGM> and <LIBFILE> with no member specified           */
             /* e.g libr<LIBFILE> since libr(mbr) does not need to be  */
             /* qualified to <LIBFILE> default                         */
             ( strcmp( fs->type, FS_T_PGM )        != 0 &&
               strcmp( fs->type, FS_T_FILE )       != 0 &&
-              ( strcmp( fs->type, FS_T_LIBFILE )  != 0 ЌЌ
+              ( strcmp( fs->type, FS_T_LIBFILE )  != 0 ||
                 *fs->extmbr == 0 ) ) ) {
             append_buf( &objn_buf, "<" );
             append_buf( &objn_buf, fs->type );
@@ -1129,7 +1129,7 @@ Char    *skip_obj_name ( Char *txt ) {
         if( srvopt_function() )
             printf("FCT:skip_obj_name(\"%s\")\n",txt);
 #endif
-        while( *txt && ( isalnum( *txt ) ЌЌ
+        while( *txt && ( isalnum( *txt ) ||
                          look_for( "./(),*<>_$@", *txt ) != NULL ) ) {
             ++txt;
         }

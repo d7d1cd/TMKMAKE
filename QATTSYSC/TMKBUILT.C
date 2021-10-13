@@ -15,13 +15,13 @@
 /*                 Rules_t *infer_rules;                             */
 /*                                                                   */
 /* ================================================================= */
- 
- 
+
+
 #include        <stdio.h>
 #include        <stdlib.h>
 #include        <string.h>
 #include        <ctype.h>
- 
+
 #include        "tmkhbase.qattsysc"
 #include        "tmkhutil.qattsysc"
 #include        "tmkhfile.qattsysc"
@@ -30,36 +30,36 @@
 #include        "tmkhbuil.qattsysc"
 #include        "tmkhopti.qattsysc"
 #include        "tmkhmsgh.qattsysc"
- 
+
 Static  Rules_t *default_cmd    = NULL;
 Static  Sufxl_t *suffix_list    = NULL;
 Static  Rules_t *infer_rules    = NULL;
- 
+
 /***********************************************************************
         Variable declarations / forward references
 ***********************************************************************/
- 
+
 Static  Void    free_suffix_list ( Void );
 Static  Void    dump_infer_rules ( Rules_t *rp );
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    setup_builtin_structures ( )                        */
 /* ================================================================= */
- 
+
 Void    setup_builtin_structures ( Void ) {
         Rules_t *tp;
         Rules_t *ntp;
         Rules_t *dp;
         Rules_t *ndp;
- 
+
 #ifdef SRVOPT
         if( srvopt_function() )
             printf("FCT:setup_builtin_structure(Void)\n");
 #endif
         /* clean up builtin support data structure for *ALL member    */
         /*  processing                                                */
- 
+
         /*  Reset default_cmd structure                               */
         if( default_cmd != NULL ) {
             free_element( default_cmd->target );
@@ -67,13 +67,13 @@ Void    setup_builtin_structures ( Void ) {
             free( default_cmd );
             default_cmd = NULL;
         }
- 
+
         /*  Reset suffix_list structure                               */
         if( suffix_list != NULL ) {
             free_suffix_list();
             suffix_list = NULL;
         }
- 
+
         /*  Reset infer_rules structure                               */
         tp  = infer_rules;
         while( tp != NULL ) {
@@ -92,12 +92,12 @@ Void    setup_builtin_structures ( Void ) {
         }
         infer_rules = NULL;
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    read_qmaksrc_builtin ()                             */
 /* ================================================================= */
- 
+
 Void    read_qmaksrc_builtin ( Void ) {
 #ifdef SRVOPT
         if( srvopt_function() )
@@ -118,12 +118,12 @@ Void    read_qmaksrc_builtin ( Void ) {
             }
         }
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    same_infer_type ()                                  */
 /* ================================================================= */
- 
+
 Static
 Boolean same_infer_type ( File_spec_t *tfs, File_spec_t *dfs ) {
         Boolean  rv;
@@ -145,19 +145,19 @@ Boolean same_infer_type ( File_spec_t *tfs, File_spec_t *dfs ) {
             printf("RTN:same_infer_type:%d\n",rv);
 #endif
         return( rv );
- 
+
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    in_suffix_list ()                                   */
 /* ================================================================= */
- 
+
 Static
 Boolean in_suffix_list ( File_spec_t *tfs ) {
         Boolean rc = FALSE;
         Sufxl_t *sl = suffix_list;
- 
+
         while( sl ) {
             if( strcmp( sl->type,     tfs->type     ) == 0 &&
                 strcmp( sl->seu_type, tfs->seu_type ) == 0 &&
@@ -169,12 +169,12 @@ Boolean in_suffix_list ( File_spec_t *tfs ) {
         }
         return( rc );
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    in_infer_target ()                                  */
 /* ================================================================= */
- 
+
 Static
 Rules_t *in_infer_target ( File_spec_t *tfs, Rules_t *rp ) {
 #ifdef SRVOPT
@@ -195,16 +195,16 @@ Rules_t *in_infer_target ( File_spec_t *tfs, Rules_t *rp ) {
 #endif
         return( rp );
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    find_inf_cmd ()                                     */
 /* ================================================================= */
- 
+
 Static
 Cmd_t   *find_inf_cmd ( File_spec_t *tfs, File_spec_t *dfs ) {
         Rules_t *rp;
- 
+
 #ifdef SRVOPT
         if( srvopt_function() ) {
             sprintf(srv_cat,"FCT:find_inf_cmd(%s,\n",srv_fs(tfs));
@@ -220,25 +220,25 @@ Cmd_t   *find_inf_cmd ( File_spec_t *tfs, File_spec_t *dfs ) {
         /* is valid since .c.<LIBFILE>: can be used to build member1  */
         /* in library.                                                */
         if( ( memcmp( tfs->type, FS_T_LIBFILE,
-                sizeof( FS_T_LIBFILE ) ) == 0 && *tfs->extmbr == 0 ) ЌЌ
+                sizeof( FS_T_LIBFILE ) ) == 0 && *tfs->extmbr == 0 ) ||
             ( memcmp( tfs->type, FS_T_TXTLIB,
-                sizeof( FS_T_TXTLIB  ) ) == 0 && *tfs->extmbr == 0 ) ЌЌ
+                sizeof( FS_T_TXTLIB  ) ) == 0 && *tfs->extmbr == 0 ) ||
             ( memcmp( tfs->type, FS_T_BNDDIR,
                 sizeof( FS_T_BNDDIR  ) ) == 0 && *tfs->extmbr == 0 ) ) {
                 return( NULL );
         }
- 
+
         /* check for same object base i.e. library/member for <FILE>  */
         /* or library/file for all other object type                  */
         if( !same_obj_base( tfs, dfs ) )
             return( NULL );
- 
+
         /* check if any inference rules for this pair of file spec    */
         /* i.e. look for  .(dfs_suffix).(tfs_suffix) inference rule   */
         if( ( rp = in_infer_target( tfs, infer_rules ) ) != NULL ) {
 #if 1
             Rules_t *dp;
- 
+
             if( ( dp = in_infer_target( &rp->target->fs,
                               (Rules_t *)rp->dependent ) ) != NULL ) {
 #ifdef SRVOPT
@@ -247,10 +247,10 @@ Cmd_t   *find_inf_cmd ( File_spec_t *tfs, File_spec_t *dfs ) {
 #endif
                 return( dp->cmd );
             }
- 
+
 #else
             Rules_t *dp     = (Rules_t *)rp->dependent;
- 
+
             while( dp ) {
                 if( same_infer_type( &dp->target->fs, dfs ) ) {
 #ifdef SRVOPT
@@ -265,17 +265,17 @@ Cmd_t   *find_inf_cmd ( File_spec_t *tfs, File_spec_t *dfs ) {
         }
         return( NULL );
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    find_valid_infer_rule ()                            */
 /* ================================================================= */
- 
+
 Static
 Rules_t *find_valid_infer_rule ( File_spec_t *tfs, Int16 line ) {
         Rules_t       *rp;
         File_spec_t   fs;
- 
+
 #ifdef SRVOPT
         if( srvopt_function() )
             printf("FCT:find_valid_infer_rule(%s)\n",srv_fs(tfs));
@@ -289,15 +289,15 @@ Rules_t *find_valid_infer_rule ( File_spec_t *tfs, Int16 line ) {
         /* is valid since .c.<LIBFILE>: can be used to build member1  */
         /* in library.                                                */
         if( ( memcmp( tfs->type, FS_T_LIBFILE,
-                sizeof( FS_T_LIBFILE ) ) == 0 && *tfs->extmbr == 0 ) ЌЌ
+                sizeof( FS_T_LIBFILE ) ) == 0 && *tfs->extmbr == 0 ) ||
             ( memcmp( tfs->type, FS_T_TXTLIB,
-                sizeof( FS_T_TXTLIB  ) ) == 0 && *tfs->extmbr == 0 ) ЌЌ
+                sizeof( FS_T_TXTLIB  ) ) == 0 && *tfs->extmbr == 0 ) ||
             ( memcmp( tfs->type, FS_T_BNDDIR,
                 sizeof( FS_T_BNDDIR  ) ) == 0 && *tfs->extmbr == 0 ) ) {
                 return( NULL );
         }
- 
- 
+
+
         if( ( rp = in_infer_target( tfs, infer_rules ) ) != NULL ) {
             /* loop through all suffixes to find implicit rule with   */
             /* different dependent of same base.                      */
@@ -307,11 +307,11 @@ Rules_t *find_valid_infer_rule ( File_spec_t *tfs, Int16 line ) {
                 strcpy( fs.type, rp->target->fs.type );
                 strcpy( fs.seu_type, rp->target->fs.seu_type );
                 fs.is_file = rp->target->fs.is_file;
- 
+
                 if( ( memcmp( tfs->type, FS_T_LIBFILE,
-                              sizeof( FS_T_LIBFILE ) ) == 0 ) ЌЌ
+                              sizeof( FS_T_LIBFILE ) ) == 0 ) ||
                     ( memcmp( tfs->type, FS_T_TXTLIB,
-                              sizeof( FS_T_TXTLIB  ) ) == 0 ) ЌЌ
+                              sizeof( FS_T_TXTLIB  ) ) == 0 ) ||
                     ( memcmp( tfs->type, FS_T_BNDDIR,
                               sizeof( FS_T_BNDDIR  ) ) == 0 )) {
                     if( fs.is_file ) {
@@ -319,13 +319,13 @@ Rules_t *find_valid_infer_rule ( File_spec_t *tfs, Int16 line ) {
                         strcpy( fs.file, rp->target->fs.file );
                         if( obj_exists ( &fs, line ) )
                             break;
- 
+
                         rp      = rp->nxt;
                     }
                     else
                         break;
                 }
- 
+
                 else {
                     if( tfs->is_file ) {
                         if( fs.is_file ) {
@@ -335,7 +335,7 @@ Rules_t *find_valid_infer_rule ( File_spec_t *tfs, Int16 line ) {
                         else {
                             /*    x.c:   x                            */
                             strcpy( fs.file, fs.extmbr );
-                            fs.extmbrы0Е = 0;
+                            fs.extmbr[0] = 0;
                         }
                     }
                     else {
@@ -346,10 +346,10 @@ Rules_t *find_valid_infer_rule ( File_spec_t *tfs, Int16 line ) {
                         }
                         /*    x:   x   no action is required          */
                     }
- 
+
                     if( obj_exists ( &fs, line ) )
                         break;
- 
+
                     rp      = rp->nxt;
                 }
             }
@@ -360,43 +360,43 @@ Rules_t *find_valid_infer_rule ( File_spec_t *tfs, Int16 line ) {
 #endif
         return( rp );
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    update_file_nm ()                                   */
 /* ================================================================= */
- 
+
 Static
 Void    update_file_nm ( File_spec_t *tfs, File_spec_t *dfs ) {
         Char  *fromp;
- 
+
 #ifdef SRVOPT
         if( srvopt_function() ) {
             sprintf(srv_cat,"FCT:update_file_nm(%s,\n",srv_fs(tfs));
             printf("%s  %s)\n",srv_cat,srv_fs(dfs));
         }
 #endif
-        fromp = dfs->is_file ЌЌ
-                    strcmp( dfs->type, FS_T_LIBFILE ) == 0 ЌЌ
-                    strcmp( dfs->type, FS_T_TXTLIB  ) == 0 ЌЌ
+        fromp = dfs->is_file ||
+                    strcmp( dfs->type, FS_T_LIBFILE ) == 0 ||
+                    strcmp( dfs->type, FS_T_TXTLIB  ) == 0 ||
                     strcmp( dfs->type, FS_T_BNDDIR  ) == 0
                 ? dfs->extmbr : dfs->file;
- 
-        strcpy( tfs->is_file ЌЌ
-                    strcmp( tfs->type, FS_T_LIBFILE ) == 0 ЌЌ
-                    strcmp( tfs->type, FS_T_TXTLIB  ) == 0 ЌЌ
+
+        strcpy( tfs->is_file ||
+                    strcmp( tfs->type, FS_T_LIBFILE ) == 0 ||
+                    strcmp( tfs->type, FS_T_TXTLIB  ) == 0 ||
                     strcmp( dfs->type, FS_T_BNDDIR  ) == 0
                 ? tfs->extmbr : tfs->file, fromp );
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    spply_inference_rules ()                            */
 /* ================================================================= */
- 
+
 Void    apply_inference_rules ( Void ) {
         Rules_t *make_rule;
- 
+
 #ifdef SRVOPT
         if( srvopt_function() )
             printf("FCT:applied_inference_rules(Void)\n");
@@ -406,16 +406,16 @@ Void    apply_inference_rules ( Void ) {
         while( make_rule != NULL ) {
             Element_t       *dp;
             Element_t       *pdp;
- 
+
             /* check for target requires commands from inference rule */
             if( make_rule->cmd == NULL ) {
                 File_spec_t     *fp = &(make_rule->target->fs);
- 
+
                 pdp     = NULL;
                 dp      = make_rule->dependent;
                 while( dp != NULL ) {
                     Cmd_t   *inf_cmd;
- 
+
                     if( ( inf_cmd = find_inf_cmd( fp, &dp->fs ) )
                                  != NULL ) {
                         /* find an inference for current rule         */
@@ -434,7 +434,7 @@ Void    apply_inference_rules ( Void ) {
                     pdp     = dp;
                     dp      = dp->nxt;
                 } /* while( dp != NULL ) */
- 
+
                 /* no inference can be found from the dependent list, */
                 /*   e.g. targ.obj: a.h      < no targ.c >            */
                 /* look for existed default dependent source according*/
@@ -443,11 +443,11 @@ Void    apply_inference_rules ( Void ) {
                 if( dp == NULL ) {
                     Rules_t         *inf_rule;
                     Element_t       *dep;
- 
+
                     if( ( inf_rule = find_valid_infer_rule( fp,
                                         make_rule->line ) ) != NULL ) {
                         make_rule->cmd  = inf_rule->cmd;
- 
+
                         /* insert the implicit dependent              */
                         /* in dependent list for later use            */
                         dep = ( Element_t * )alloc_buf(
@@ -457,20 +457,20 @@ Void    apply_inference_rules ( Void ) {
                                           : inf_rule->target->fs.file ) +
                                 strlen( make_rule->target->name ) + 1,
                                 "apply_inference_rules()" );
- 
+
                         dep->maked      = FALSE;
                         dep->nxt        = make_rule->dependent;
                         dep->fs         = inf_rule->target->fs;
                         strcpy( dep->fs.lib, fp->lib );
                         update_file_nm( &dep->fs, fp );
                         strcpy( dep->name, obj_full_name( &dep->fs ) );
- 
+
                         make_rule->dependent= dep;
                         make_rule->implicit_rule = TRUE;
                     } /* if((inf_rule=find_valid_infer_rule(fp)....   */
                 } /* if( dp == NULL ) */
             } /* if( make_rule->cmd == NULL ) */
- 
+
             /* applies automatic target generation from dependency    */
             /* i.e. if there is a rule with dependents and its        */
             /* dependents do not have any explicit rule defined,      */
@@ -485,7 +485,7 @@ Void    apply_inference_rules ( Void ) {
                 Rules_t         *inf_rule;
                 Element_t       *tep;
                 Element_t       *dep;
- 
+
                 /* ignore dependent entry if it is a target in        */
                 /*      rule list.                                    */
                 if( ! in_rule_list ( dp->name ) &&
@@ -496,27 +496,27 @@ Void    apply_inference_rules ( Void ) {
                     tep = ( Element_t * )alloc_buf(
                             sizeof( Element_t ) + strlen( dp->name ),
                             "apply_inference_rules()" );
- 
+
                     strcpy( tep->name, dp->name );
                     tep->fs         = dp->fs;
                     tep->nxt        = NULL;
                     tep->maked      = FALSE;
- 
+
                     /* Create the dependent node                      */
                     dep = ( Element_t * )alloc_buf(
                             sizeof( Element_t ) +
                             strlen( inf_rule->target->fs.file ) +
                             strlen( dp->name ) + 1,
                             "apply_inference_rules()" );
- 
+
                     dep->fs         = inf_rule->target->fs;
                     strcpy( dep->fs.lib, dp->fs.lib );
                     update_file_nm( &dep->fs, fp );
- 
+
                     strcpy( dep->name, obj_full_name( &dep->fs ) );
                     dep->nxt        = NULL;
                     dep->maked      = FALSE;
- 
+
                     add_inf_rule_to_rule_tail( tep, dep, inf_rule->cmd );
                 } /* if( ! in_rule_list ( dp->name ) &&  ...          */
                 else {
@@ -526,28 +526,28 @@ Void    apply_inference_rules ( Void ) {
                                 sizeof( Element_t ) +
                                 strlen( dp->name ),
                                 "apply_inference_rules()" );
- 
+
                         strcpy( tep->name, dp->name );
                         tep->fs         = dp->fs;
                         tep->nxt        = NULL;
                         tep->maked      = FALSE;
- 
+
                         add_inf_rule_to_rule_tail( tep, NULL,
                                   default_cmd->cmd );
                     }
                 } /* if( ! in_rule_list ( dp->name ) &&  ...          */
                 dp      = dp->nxt;
             } /* while( dp != NULL ) */
- 
+
             make_rule       = get_next_rule();
         }  /* while( make_rule ) */
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    add_rule_sort_suffix ()                             */
 /* ================================================================= */
- 
+
 Static
 Boolean add_rule_sort_suffix ( Rules_t **h, Rules_t *rp ) {
         Sufxl_t *slp    = suffix_list;
@@ -555,7 +555,7 @@ Boolean add_rule_sort_suffix ( Rules_t **h, Rules_t *rp ) {
         Rules_t *hp     = *h;
         Rules_t *curp;
         Rules_t *prvp;
- 
+
 #ifdef SRVOPT
         if( srvopt_function() ) {
             sprintf(srv_cat,"FCT:add_rule_sort_suffix(%s,",
@@ -569,7 +569,7 @@ Boolean add_rule_sort_suffix ( Rules_t **h, Rules_t *rp ) {
             *h      = rp;
             return( TRUE );
         }
- 
+
         /* find position of suffix in list of rp                      */
         while( slp ) {
             if( strcmp( slp->type,     rp->target->fs.type     ) == 0 &&
@@ -579,7 +579,7 @@ Boolean add_rule_sort_suffix ( Rules_t **h, Rules_t *rp ) {
             }
             slp     = slp->nxt;
         }
- 
+
         if( slp == NULL ) {
             /* suffix not in current SUFFIXES list, add to list end   */
             while( hp->nxt )
@@ -589,7 +589,7 @@ Boolean add_rule_sort_suffix ( Rules_t **h, Rules_t *rp ) {
             prvp    = NULL;
             curp    = *h;
             cslp    = suffix_list;
- 
+
             while( curp && cslp && cslp != slp ) {
                 /* find the position in the rules list h to insert    */
                 /* a rule rp in the sorted order described by the     */
@@ -605,7 +605,7 @@ Boolean add_rule_sort_suffix ( Rules_t **h, Rules_t *rp ) {
                 }
                 cslp    = cslp->nxt;
             }
- 
+
             /* insert the suffix rule in the position located by      */
             /* previous process                                       */
             if( prvp == NULL ) {
@@ -617,18 +617,18 @@ Boolean add_rule_sort_suffix ( Rules_t **h, Rules_t *rp ) {
                 prvp->nxt = rp;
             }
         }
- 
+
         return( TRUE );
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    update_inference_rules ()                           */
 /* ================================================================= */
 /***********************************************************************
    Inference rule data structure
    =============================
- 
+
 Rules_t *infer_rule --> Element_t *target      -> fs.extmbr = .obj
                         Rules_t   *dependent   -> Element_t *source     ->
 fs.extmbr = .c
@@ -650,7 +650,7 @@ fs.extmbr = .asm
                         .......
 Check
 ***********************************************************************/
- 
+
 Void    update_inference_rules ( Char *dp, Cmd_t *cp, Int16 line ) {
         File_spec_t     tfs;
         File_spec_t     dfs;
@@ -658,7 +658,7 @@ Void    update_inference_rules ( Char *dp, Cmd_t *cp, Int16 line ) {
         Rules_t         *trp;
         Rules_t         *drp;
         Element_t       *ep;
- 
+
 #ifdef SRVOPT
         if( srvopt_function() )
             printf("FCT:update_inference_rules(\"%s\",%s,%d)\n",
@@ -672,7 +672,7 @@ Void    update_inference_rules ( Char *dp, Cmd_t *cp, Int16 line ) {
                 default_cmd->target = (Element_t *)alloc_buf(
                         sizeof(Element_t), "update_inference_rules()" );
             }
- 
+
             default_cmd->nxt        = NULL;
             default_cmd->dependent  = NULL;
             default_cmd->op         = OP_ERROR;
@@ -680,29 +680,29 @@ Void    update_inference_rules ( Char *dp, Cmd_t *cp, Int16 line ) {
             default_cmd->implicit_rule=  FALSE;
             default_cmd->line       = line;
             default_cmd->cmd        = cp;
- 
+
             ep                      = default_cmd->target;
             ep->nxt                 = NULL;
             ep->maked               = FALSE;
-            ep->nameы0Е             = 0;
- 
+            ep->name[0]             = 0;
+
             fsp                     = &ep->fs;
-            fsp->libы0Е             =
-            fsp->fileы0Е            =
-            fsp->extmbrы0Е          =
-            fsp->seu_typeы0Е        =
-            fsp->typeы0Е            = 0;
+            fsp->lib[0]             =
+            fsp->file[0]            =
+            fsp->extmbr[0]          =
+            fsp->seu_type[0]        =
+            fsp->type[0]            = 0;
             fsp->is_file            = FALSE;
             fsp->obj_type           = '*';
- 
+
             return;
         }
- 
+
         if( !parse_inference_rule( dp, &dfs, &tfs ) ) {
             log_error( INV_INF_RULE, NULL, line );
             exit( TMK_EXIT_FAILURE );
         }
- 
+
         if( ( trp = in_infer_target( &tfs, infer_rules ) ) == NULL ) {
             /* target inference rules not in list, add one in         */
             trp            = (Rules_t *)alloc_buf( sizeof( Rules_t ),
@@ -715,12 +715,12 @@ Void    update_inference_rules ( Char *dp, Cmd_t *cp, Int16 line ) {
             trp->line            = -1;
             trp->recursive       =
             trp->implicit_rule   =  FALSE;
- 
+
             trp->target->nxt     = NULL;
             trp->target->maked   = FALSE;
-            trp->target->nameы0Е = 0;
+            trp->target->name[0] = 0;
             trp->target->fs      = tfs;
- 
+
             add_rule_sort_suffix( &infer_rules, trp );
         }
         if( ( drp = in_infer_target( &dfs, (Rules_t *)trp->dependent ) )
@@ -735,12 +735,12 @@ Void    update_inference_rules ( Char *dp, Cmd_t *cp, Int16 line ) {
             drp->line            = -1;
             drp->recursive       =
             drp->implicit_rule   =  FALSE;
- 
+
             drp->target->nxt     = NULL;
             drp->target->maked   = FALSE;
-            drp->target->nameы0Е = 0;
+            drp->target->name[0] = 0;
             drp->target->fs      = dfs;
- 
+
             add_rule_sort_suffix( (Rules_t **)&trp->dependent, drp );
         }
         /* both target and dependent infererence rule nodes already   */
@@ -754,17 +754,17 @@ Void    update_inference_rules ( Char *dp, Cmd_t *cp, Int16 line ) {
         dump_infer_rules ( infer_rules );
 */
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    sort_infer_rules ()                                 */
 /* ================================================================= */
- 
+
 Static
 Void    sort_infer_rules ( Void ) {
         Rules_t *tp     = infer_rules;
         Rules_t *ntp;
- 
+
 #ifdef SRVOPT
         if( srvopt_function() )
             printf("FCT:sort_infer_rules(Void)\n");
@@ -775,31 +775,31 @@ Void    sort_infer_rules ( Void ) {
             /* re-sort the source rules list of the current target rule*/
             Rules_t *dp     = (Rules_t *)tp->dependent;
             Rules_t *ndp;
- 
+
             tp->dependent   = NULL;
             while( dp ) {
                 ndp     = dp->nxt;
                 add_rule_sort_suffix( (Rules_t **)&tp->dependent, dp );
                 dp      = ndp;
             }
- 
+
             /* insert the current target rule into the infer_rule list */
             ntp     = tp->nxt;
             add_rule_sort_suffix( &infer_rules, tp );
             tp      = ntp;
         }
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    free_suffix_list ()                                 */
 /* ================================================================= */
- 
+
 Static
 Void    free_suffix_list ( Void ) {
         Sufxl_t *slp    = suffix_list;
         Sufxl_t *snlp   = NULL;
- 
+
 #ifdef SRVOPT
         if( srvopt_function() )
             printf("FCT:free_suffix_list(Void)\n");
@@ -811,17 +811,17 @@ Void    free_suffix_list ( Void ) {
         }
         suffix_list     = NULL;
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    update_suffix ()                                    */
 /* ================================================================= */
- 
+
 Void    update_suffix ( Char *sp, Int32 line_no ) {
         Sufxl_t *slp    = suffix_list;
         Sufxl_t *snlp   = NULL;
         File_spec_t     fs;
- 
+
 #ifdef SRVOPT
         if( srvopt_function() )
             printf("FCT:update_suffix(\"%s\",%d)\n",sp, line_no);
@@ -834,9 +834,9 @@ Void    update_suffix ( Char *sp, Int32 line_no ) {
             /* skip to the last suffix list node first                */
             while( slp && slp->nxt != NULL )
                 slp     = slp->nxt;
- 
+
             sp      = skip_white_spaces( sp );
- 
+
             /* loop over all suffixes which begin with a '.' char     */
             while( *sp ) {
                 if( *sp++ == '.' ) {
@@ -868,23 +868,23 @@ Void    update_suffix ( Char *sp, Int32 line_no ) {
                 sp      = skip_white_spaces( sp );
             }
         }
- 
+
         /* every time the suffixes are changed, the inference rules   */
         /*  application order needs to be adjusted.                   */
         sort_infer_rules();
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    dump_infer_rules ()                                 */
 /* ================================================================= */
- 
+
 Static
 Void    dump_infer_rules ( Rules_t *rp ) {
         Boolean      dbg;
         File_spec_t  *fs;
         Cmd_t        *cp;
- 
+
         if( ! ( dbg = opt_debug() ) ) {
             return;
         }
@@ -904,7 +904,7 @@ Void    dump_infer_rules ( Rules_t *rp ) {
                 append_buf( &t1, txtbuf );
                 append_buf( &t1, ":" );
                 log_dbg( t1.bp );
- 
+
                 cp      = dp->cmd;
                 while( cp ) {
                     sprintf( txtbuf, "      %s", cp->cmd_txt );
@@ -918,35 +918,35 @@ Void    dump_infer_rules ( Rules_t *rp ) {
                 else {
                     log_dbg( "" );
                 }
- 
+
                 dp      = dp->nxt;
             }
             rp      = rp->nxt;
         }
 }
- 
- 
+
+
 /* ================================================================= */
 /*  Function:    dump_builtins ()                                    */
 /* ================================================================= */
- 
+
 Void    dump_builtins ( Void ) {
         Boolean      dbg;
         Rules_t      *rp;
         Cmd_t        *cp;
         File_spec_t  *fs;
         Sufxl_t      *slp    = suffix_list;
- 
+
         if( ! ( dbg = opt_debug() ) ) {
             return;
         }
- 
+
         log_dbg("*****  Built-ins / Inference rules definitions  "
                     "*************************");
- 
+
         reset_buf( &t1 );
         append_buf( &t1, ".SUFFIXES:" );
- 
+
         while( slp ) {
             sprintf( txtbuf, " .%s<%s%s%s>", slp->file, slp->type,
                              *slp->seu_type ? "," : "",
@@ -956,12 +956,12 @@ Void    dump_builtins ( Void ) {
         }
         log_dbg( t1.bp );
         log_dbg( "" );
- 
+
         if( default_cmd ) {
             if( dbg )
                 log_dbg( "==========================================="
                          "==============================");
- 
+
             log_dbg( ".DEFAULT:" );
             cp      = default_cmd->cmd;
             while( cp ) {
@@ -971,16 +971,16 @@ Void    dump_builtins ( Void ) {
             }
             log_dbg( "" );
         }
- 
+
         if( dbg )
             log_dbg( "============================================"
                      "=============================");
- 
+
         dump_infer_rules ( infer_rules );
- 
+
         if( dbg ) {
             log_dbg("*********************************************"
                     "**********************");
         }
 }
- 
+
