@@ -396,7 +396,7 @@ Char    *get_sym ( Char *sym ) {
 
 Static
 Char    *output_translate ( Char *rp, Char *from, Char *to,
-                            Char *end, Int16 line ) {
+                            Char *end) {
         Char  *sp;
         Char  *ep;
         Int32 fromsz;
@@ -526,7 +526,7 @@ Char    *expand_macro_txt ( Char **txt, Int32 *msz, Int16 line ) {
                             log_error( MISMATCH_PARENTH, NULL, line );
                             exit( TMK_EXIT_FAILURE );
                         }
-                        rp = output_translate( rp, from, to, end, line );
+                        rp = output_translate( rp, from, to, end);
                         mp = end;
                     }
                     *msz      = ( rp != NULL ) ? strlen( rp ) : 0;

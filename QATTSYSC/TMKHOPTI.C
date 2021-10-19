@@ -114,7 +114,7 @@ Char    *srv_sym            ( Sym_e_t *s );
 *       function prototypes
 **********************************************************************/
 
-Void    process_options ( int argc, Char **argv );
+Void    process_options ( Char **argv );
 Void    setup_command_macro ( Void );
 Char    *get_first_requested_target ( Void );
 Char    *get_next_requested_target ( Void );

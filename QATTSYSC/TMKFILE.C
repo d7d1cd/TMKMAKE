@@ -621,7 +621,6 @@ Boolean update_file_date ( File_spec_t *fs, Int16 line ) {
 #endif
         D0100FMT        od;               /* object list format       */
         mbrd0100        md;               /* member desc format  @02C */
-        Char            *tp;              /* temporary text pointer   */
         Char            *cd;              /* creation date string     */
         Char            *ud;              /* last update date string  */
         Char            *o_type;          /* system object type ptr   */

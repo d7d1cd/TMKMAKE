@@ -274,7 +274,7 @@ Void    add_inf_rule_to_rule_tail ( Element_t *tep, Element_t *dep,
 /* ================================================================= */
 
 Static
-Void    rules_add_dependents ( Rules_t *rp, Element_t *t, Element_t *d ){
+Void    rules_add_dependents ( Rules_t *rp, Element_t *d ){
         Element_t       *rep    = rp->dependent;
 
 #ifdef SRVOPT
@@ -508,7 +508,6 @@ Void    CPF4102_handler ( int sig ) {
         sigdata_t       *data;  /* pointer to exception data area     */
         sigact_t        *act;   /* pointer to exception action area   */
 #endif
-        Int32           cpfmsg;
 
         /* Set ptr to sigdata structure                               */
 #ifdef __ILEC400__
@@ -700,8 +699,6 @@ Static
 Void    register_rules ( Void ) {
         Element_t       *target;
         Element_t       *depend;
-        Char            *sp;
-        Char            *tp;
 
 #ifdef SRVOPT
         if( srvopt_function() )
@@ -737,11 +734,11 @@ Void    register_rules ( Void ) {
                     rules_add_tail( target, tp );
                 } else
                 if( cur_wrk.op == OP_RULES && cur_wrk.cmd == NULL ) {
-                    rules_add_dependents( rp, target, tp );
+                    rules_add_dependents( rp, tp );
                 } else
                 if( cur_wrk.op == OP_RULES &&
                         rp->op == OP_RULES && rp->cmd == NULL ) {
-                    rules_add_dependents( rp, target, tp );
+                    rules_add_dependents( rp, tp );
                     rp->cmd = cur_wrk.cmd;
                 } else
                 if( cur_wrk.op == OP_MULTI_RULES &&
@@ -960,7 +957,6 @@ try_again:
                 ( fn = include_keyword_found( rtn_txt ) ) != NULL ) {
                 /* start nested include process                       */
                 Char    *tp = fn;
-                FILE    *fp;
 
                 if( ++cur_mf_lvl >= max_mf_lvl ) {
                     /* over max nested include level - error          */
@@ -1480,8 +1476,6 @@ Void    setup_parser ( Void ) {
 Void    setup_parser_structures ( Void ) {
         Rules_t *rp     = head;
         Rules_t *nrp;
-        Cmd_t   *cp;
-        Cmd_t   *ncp;
 
 #ifdef SRVOPT
         if( srvopt_function() )
@@ -1524,11 +1518,9 @@ Void    setup_parser_structures ( Void ) {
 Int16   parse_makefile ( Char *makef, Boolean parse_makef ) {
         Char        *lp;
         Char        *sp;
-        Char        *tp;
         Int16       line;
         Int16       len;
         Int16       op;
-        File_spec_t fs;
 
 #ifdef SRVOPT
         if( srvopt_function() )

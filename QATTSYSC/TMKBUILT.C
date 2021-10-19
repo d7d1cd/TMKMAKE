@@ -932,9 +932,7 @@ Void    dump_infer_rules ( Rules_t *rp ) {
 
 Void    dump_builtins ( Void ) {
         Boolean      dbg;
-        Rules_t      *rp;
         Cmd_t        *cp;
-        File_spec_t  *fs;
         Sufxl_t      *slp    = suffix_list;
 
         if( ! ( dbg = opt_debug() ) ) {

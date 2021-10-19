@@ -425,8 +425,6 @@ Void    set_pre_defined_macros ( Rules_t *rp ) {
 
         /* loop through all the dependent in list to build $? & $**   */
         while( ep ) {
-            Char    *np;
-
             append_buf( &t2, ep->name );
             append_buf( &t2, " " );
 
@@ -713,7 +711,6 @@ Boolean make_target ( Rules_t *rp ) {
 
 Void    process_makefile ( Void ) {
         Rules_t *make_rule;
-        Void    (*old_signal_fct)( int );
 
 #ifdef SRVOPT
         if( srvopt_function() )

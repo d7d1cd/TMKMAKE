@@ -313,7 +313,6 @@ Void    usrspc_exist_trap ( int sig ) {
         sigdata_t       *data;  /* pointer to exception data area     */
         sigact_t        *act;   /* pointer to exception action area   */
 #endif
-        Int32           cpfmsg;
 
         /* Set ptr to sigdata structure                               */
 #ifdef __ILEC400__
@@ -399,7 +398,6 @@ Void    usrspc_delete_trap ( int sig ) {
         sigdata_t       *data;  /* pointer to exception data area     */
         sigact_t        *act;   /* pointer to exception action area   */
 #endif
-        Int32           cpfmsg;
 
         /* Set ptr to sigdata structure                               */
 #ifdef __ILEC400__

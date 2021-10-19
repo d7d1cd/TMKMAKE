@@ -198,7 +198,6 @@ Int32   no_of_makefile_mbr ( Void ) {
 /* ================================================================= */
 
 Char    *next_makefile_mbr ( Void ) {
-        Mbr_list_t  *mlp = mlist;
 
 #ifdef SRVOPT
         if( srvopt_function() )
@@ -285,7 +284,7 @@ Void    setup_command_macro ( Void ) {
 /*  Function:    process_options ()                                  */
 /* ================================================================= */
 
-Void    process_options ( int argc, Char **argv ) {
+Void    process_options ( Char **argv ) {
         Int16           cnt;
         Int16           i;
         int             txtsz;     /* int to match printf("%*") type */
