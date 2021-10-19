@@ -1,6 +1,6 @@
 /******************************************************************************/
 /*                                                                            */
-/*  @SRCLIB  - библиотека, где расположен файл исходного кода;                */
+/*  @SRCLIB  - библиотека, где расположены файлы исходного кода;              */
 /*  @DSTLIB  - библиотека, куда будут помещены собранные объекты.             */
 /*                                                                            */
 /******************************************************************************/
@@ -16,8 +16,9 @@ PGM PARM(&@SRCLIB &@DSTLIB)
   /* ВНУТРЕННИЕ ПЕРЕМЕННЫЕ ****************************************************/
   DCL        VAR(&TAG)        TYPE(*LGL)           VALUE('0')
   DCL        VAR(&SRCLIB)     TYPE(*CHAR) LEN(10)  VALUE(CSNSRC)                /* Библиотека с файлом исходного кода */
-  DCL        VAR(&DSTLIB)     TYPE(*CHAR) LEN(10)  VALUE(CSNTST)                /* Библиотека для размещения собранных объектов */
+  DCL        VAR(&DSTLIB)     TYPE(*CHAR) LEN(10)  VALUE(TMKMAKE)               /* Библиотека для размещения собранных объектов */
   DCL        VAR(&TMPLIB)     TYPE(*CHAR) LEN(10)  VALUE(QTEMP)                 /* Временная библиотека */
+  DCL        VAR(&DBGMOD)     TYPE(*CHAR) LEN(10)  VALUE(*ALL)                  /* Режим отладки */
   DCL        VAR(&LOWKEY)     TYPE(*CHAR) LEN(4)
   DCL        VAR(&MSGKEY)     TYPE(*CHAR) LEN(4)
   DCL        VAR(&HIKEY)      TYPE(*CHAR) LEN(4)
@@ -34,8 +35,450 @@ PGM PARM(&@SRCLIB &@DSTLIB)
 
 
   /* ОЧИСТКА ******************************************************************/
+  DLTCMD     CMD(&DSTLIB/TMKMAKE)
+  MONMSG     MSGID(CPF0000)
   DLTPGM     PGM(&DSTLIB/TMKMAKEC)
   MONMSG     MSGID(CPF0000)
+  DLTMSGF    MSGF(&DSTLIB/TMKMSGF)
+  MONMSG     MSGID(CPF0000)
+  DLTF       FILE(&DSTLIB/QMAKSRC)
+  MONMSG     MSGID(CPF0000)
+
+
+
+
+  /* СОЗДАНИЕ ФАЙЛА ВСТРОЕННЫХ МАКРОСОВ ***************************************/
+  CHGLIBL    LIBL(*NONE)
+  SNDPGMMSG  MSG('BEGIN MONITORING') KEYVAR(&LOWKEY)
+
+  CRTSRCPF   FILE(&DSTLIB/QMAKSRC) RCDLEN(240) TEXT('Make tool builtin')
+  MONMSG     MSGID(CPF0000) EXEC(GOTO BADFILE)
+
+  CPYSRCF    FROMFILE(&SRCLIB/QATTSYSC) FROMMBR(TMKBLTF) +
+             TOFILE(&DSTLIB/QMAKSRC) TOMBR(BUILTIN)
+  MONMSG     MSGID(CPF0000) EXEC(GOTO BADFILE)
+
+
+
+
+  /* СОЗДАНИЕ И ЗАПОЛНЕНИЕ ФАЙЛА СООБЩЕНИЙ ************************************/
+  CHGLIBL    LIBL(*NONE)
+  SNDPGMMSG  MSG('BEGIN MONITORING') KEYVAR(&LOWKEY)
+
+  CRTMSGF    MSGF(&DSTLIB/TMKMSGF) TEXT('Make tool messages')
+  MONMSG     MSGID(CPF0000) EXEC(GOTO BADMSGF)
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             MSGID(TMK0001) MSG('Start Make Tool')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             MSGID(TMK0002) MSG('Target Labels')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             MSGID(TMK0003) MSG('Description File')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             MSGID(TMK0004) MSG('Make Library')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             MSGID(TMK0005) MSG('File Member')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             MSGID(TMK0006) MSG('Macro Definitions')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             MSGID(TMK0007) MSG('Options')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             MSGID(TMK0008) MSG('Source Margin')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             MSGID(TMK0009) MSG('Left Margin')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             MSGID(TMK0010) MSG('Right Margin')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             MSGID(TMK0011) MSG('Return Code Handling')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             MSGID(TMK0012) MSG('Severity')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             MSGID(TMK0013) MSG('User Message Log')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             MSGID(TMK0014) MSG('Method')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             MSGID(TMK0015) MSG('Internal Service Options')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9001) +
+             MSG('Invalid inference rule specification in line &1.') +
+             SECLVL('&N Cause . . . . . :   The inference rule specified in line &1 does not conform to the +
+                     specification. Possibly dependents are specified in the definition. &N Recovery  . . . +
+                     :   Correct the invalid rule in the description file and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9002) +
+             MSG('Invalid .SUFFIXES dependents specification in line &1.') +
+             SECLVL('&N Cause . . . . . :   The dependents for the .SUFFIXES rule in the description file do +
+                     not contain valid object specifications. Possibly missing thg e ''.'' character in +
+                     front of the dependent name. &N Recovery  . . . :   Correct the invalid object name in +
+                     the description file and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9003) +
+             MSG('Nested include directive exceeded the maximum (32) allowed in line &1.') +
+             SECLVL('&N Recovery  . . . :   Correct the description file include directive nesting structure +
+                     and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9004) +
+             MSG('Macro parenthesis mismatched in line &1.') +
+             SECLVL('&N Cause . . . . . :   An apparent macro reference was found, but the closing parenthesis +
+                     are missing. &N Recovery  . . . :   Verify the parenthesis for macro references are +
+                     correct and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5) (*CHAR 32)) MSGID(TMK9005) +
+             MSG('Do not know how to process target &2 in line &1.') +
+             SECLVL('&N Cause . . . . . :   The specified target in the description file needs to be processed, +
+                     but neither an explicit rule or an inference rule provide sufficient information for +
+                     TMKMAKE to proceed. &N Recovery  . . . :   Verify the rules in the description file is +
+                     correct and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 1000)) MSGID(TMK9006) +
+             MSG('&1') +
+             SECLVL('&N Cause . . . . . :   User message. &N Recovery  . . . :   None.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 34)) MSGID(TMK9007) +
+             MSG('Invalid macro definition in TMKMAKE command, ''='' character expected.') +
+             SECLVL('&N Cause . . . . . :   The MACRO &1 defined in the TMKMAKE command does not contains a valid +
+                     macro definition; the ''='' character is missing in the macro definition. +
+                     &N Recovery  . . . :   Retry the TMKMAKE command with the proper macro definition syntax')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9008) +
+             MSG('Multiple rules defined for the same target in line &1.') +
+             SECLVL('&N Cause . . . . . :   More than one rules with commands sequence are defined using the same +
+                     target. &N Recovery  . . . :   Correct the invalid rule in the description file and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5) (*CHAR 32)) MSGID(TMK9009) +
+             MSG('Unable to open include file &2 in line &1.') +
+             SECLVL('&N Cause . . . . . :   The inference rule specified in line &1 does not conform to the +
+                     specification. &N Recovery  . . . :   Correct the invalid rule in the description file and +
+                     try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9010) +
+             MSG('Invalid desription rule in line &1.') +
+             SECLVL('&N Cause . . . . . :   The specified text line in the description file does not conform to +
+                     the syntax of a dependency rule for the TMKMAKE command. &N Recovery  . . . :   Correct the +
+                     invalid rule in the description file and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 50)) MSGID(TMK9011) +
+             MSG('Run out of heap space.') +
+             SECLVL('&N Cause . . . . . :   The TMKMAKE command was trying to allocate storage from the program +
+                     heap at location &1 and was unsuccessful. &N Recovery  . . . :   Decrease the complexity of +
+                     the description file and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 32)) MSGID(TMK9012) +
+             MSG('Unable to open description file &1.') +
+             SECLVL('&N Cause . . . . . :   TMKMAKE command was unable to open the description file as specified +
+                     in the command. &N Recovery  . . . :   Make sure the description file exists in the specified +
+                     location and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             MSGID(TMK9013) +
+             MSG('Invalid MARGIN specification in the TMKMAKE command, parameters ignored.') +
+             SECLVL('&N Cause . . . . . :   The MARGIN parameters in the TMKMAKE command are invalid. +
+                     &N Recovery  . . . :   None.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 32)) MSGID(TMK9014) +
+             MSG('Target &1 not found in description file.') +
+             SECLVL('&N Cause . . . . . :   Target(s) specified in the TMKMAKE command can not be found in the +
+                     description file. &N Recovery  . . . :   Correct the target name(s) in the command and +
+                     try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             MSGID(TMK9015) +
+             MSG('Default built-in rule file BUILTIN.QMAKSRC not found.') +
+             SECLVL('&N Cause . . . . . :   Built-in inference rule file, BUILTIN.QMAKSRC, was not found in +
+                     *CURLIB or *LIBL, no built-in rules are applied to the current TMKMAKE command processing. +
+                     &N Recovery  . . . :   None.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 1024)) MSGID(TMK9016) +
+             MSG('Error directive: &1') +
+             SECLVL('&N Cause . . . . . :   The TMKMAKE command is terminated by a user requested error directive +
+                     in the description file. &N Recovery  . . . :   None.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9017) +
+             MSG('No expression in if or elif directives in line &1.') +
+             SECLVL('&N Cause . . . . . :   An if or elif directive was found, but an invalid or no expression was +
+                     found after the if or elif keyword. &N Recovery  . . . :   Correct the invalid directive +
+                     expression in the description file and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5) (*CHAR 32)) MSGID(TMK9018) +
+             MSG('Unknown directive &2 in line &1.') +
+             SECLVL('&N Cause . . . . . :   The specified directive was found in the description file, but it is not +
+                     recognized by the TMKMAKE command. &N Recovery  . . . :   Remove the invalid directive from the +
+                     description file and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9019) +
+             MSG('Divided by zero in the if directive expression in line &1.') +
+             SECLVL('&N Cause . . . . . :   As stated. &N Recovery  . . . :   Correct the invalid expression in the +
+                     description file and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9020) +
+             MSG('Syntax error found in if directive expression in line &1.') +
+             SECLVL('&N Cause . . . . . :   The expression in the if directive does not contain an valid arithmetic +
+                     expression. &N Recovery  . . . :   Correct the invalid expression in the description file and +
+                     try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9021) +
+             MSG('The command in line &1 exceeds the 3000 characters limit.') +
+             SECLVL('&N Cause . . . . . :   The size of the command specified in the description file which the +
+                     TMKMAKE command needs to process, after all the macro substitution, exceeds the limit set by +
+                     QCMDEXC. &N Recovery  . . . :   Make sure the command needs to be processed in the description +
+                     file is less than 3000 characters.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9022) +
+             MSG('Invalid octal number in conditional directive expression in line &1.') +
+             SECLVL('&N Cause . . . . . :   As stated. &N Recovery  . . . :   Correct the invalid expression in the +
+                     description file and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9023) +
+             MSG('Invalid hexadecimal number in conditional directive expression in line &1.') +
+             SECLVL('&N Cause . . . . . :   As stated. &N Recovery  . . . :   Correct the invalid expression in the +
+                     description file and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9024) +
+             MSG('Conditional directive expression too complicated in line &1.') +
+             SECLVL('&N Cause . . . . . :   As stated. &N Recovery  . . . :   Reduce the complexity of the expression +
+                     in the description file and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9025) +
+             MSG('Internal conditional directive expression error in line &1.') +
+             SECLVL('&N Cause . . . . . :   Problems were detected by the TMKMAKE command when trying to evaluate an +
+                     expression in the if or elif directives. &N Recovery  . . . :   Reduce the complexity of the +
+                     expression in the description file and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9026) +
+             MSG('Invalid characters in conditional directive expression in line &1.') +
+             SECLVL('&N Cause . . . . . :   Invalid characters, such as non numeric character and operators which are +
+                     not supported by the TMKMAKE command, are found in the conditional directive expression. +
+                     &N Recovery  . . . :   Correct the invalid expression in the description file and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9027) +
+             MSG('Macro expansion exceeds 3000 characters limit in line &1.') +
+             SECLVL('&N Cause . . . . . :   Macro expression exceeds the 3000 character limit. +
+                     &N Recovery  . . . :   Make sure any macro expansion does not exceed the 3000 characters limit.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9028) +
+             MSG('Misplaced elif directive in line &1.') +
+             SECLVL('&N Cause . . . . . :   The elif directive was found in the description file where it was +
+                     not expected. &N Recovery  . . . :   Correct the misplaced elif directive in the description +
+                     file and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9029) +
+             MSG('Misplaced else directive in line &1.') +
+             SECLVL('&N Cause . . . . . :   The else directive was found in the description file where it was not +
+                     expected. &N Recovery  . . . :   Correct the misplaced else directive in the description file +
+                     and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9030) +
+             MSG('Misplaced endif directive in line &1.') +
+             SECLVL('&N Cause . . . . . :   The endif directive was found in the description file where it was not +
+                     expected. &N Recovery  . . . :   Correct the misplaced endif directive in the description file +
+                     and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             MSGID(TMK9031) +
+             MSG('Unexpected end of file encountered.') +
+             SECLVL('&N Cause . . . . . :   The end of the description file was encountered when the TMKMAKE command +
+                     expected more input. &N Recovery  . . . :   Make sure all rules in the description file are of +
+                     valid syntax and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9032) +
+             MSG('Invalid command syntax in line &1; rejected by QCMDEXC.') +
+             SECLVL('&N Cause . . . . . :   The command text passed to QCMDEXC was rejected due to invalid command +
+                     syntax. &N Recovery  . . . :   Correct the invalid command sequences in the description file +
+                     and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9033) +
+             MSG('Command executed by TMKMAKE failed in line &1.') +
+             SECLVL('&N Cause . . . . . :   Either an exception has occurred or the return code returned by the +
+                     command executed by TMKMAKE exceeds the severity level set by the TMKMAKE command. +
+                     &N Recovery  . . . :   Check the description file and make sure the command being executed is +
+                     correct and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5) (*CHAR 22)) MSGID(TMK9034) +
+             MSG('Number of members in file &2 exceeds the limit.') +
+             SECLVL('&N Cause . . . . . :   *ALL is specified in the SRCMBR field in the STRMAKE command and there +
+                     are more members in the source file than the QUSLMBR program can handled. The number of members +
+                     processed is limited to &1. &N Recovery  . . . :   Check the source file and make sure the +
+                     number of members in file &2 does not exceed &1.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 22)) MSGID(TMK9035) +
+             MSG('No member in file &1 is found.') +
+             SECLVL('&N Cause . . . . . :   *ALL is specified in the SRCMBR field in the STRMAKE command and no +
+                     member is found in the source file. &N Recovery  . . . :   Check the source file and make sure +
+                     there is at least one member in the file.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5) (*CHAR 9)) MSGID(TMK9036) +
+             MSG('Invalid format for keyword &2 in line &1.') +
+             SECLVL('&N Cause . . . . . :   Keyword &2 with invalid format was found in the description file. +
+                     &N Recovery  . . . :   Keyword must either be followed by a '':'' character or no text at all. +
+                     Correct the syntax of the keyword &2 in the description file and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9037) +
+             MSG('Invalid inference rule format in line &1.') +
+             SECLVL('&N Cause . . . . . :   Invalid inference rule format is found in the description file. Possibly +
+                     missing '':'' character in the rule definition. Correct the error and try again. +
+                     &N Recovery  . . . :   Correct the inference rule format and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9038) +
+             MSG('Invalid inference rule format, no target found in line &1.') +
+             SECLVL('&N Cause . . . . . :   Invalid inference rule format is found in the description file and no +
+                     target can be identified. Correct the error and try again. &N Recovery  . . . :   Correct the +
+                     inference rule format and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9039) +
+             MSG('Command sequence is found with no associated target definition in line &1.') +
+             SECLVL('&N Cause . . . . . :   Command sequence with no associated target definition is found in the +
+                     description. &N Recovery  . . . :   Correct the inference rule by adding a target definition +
+                     in the rule and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9040) +
+             MSG('Invalid object specification found in line &1.') +
+             SECLVL('&N Cause . . . . . :   An invalid object specification is found in the description file. +
+                     &N Recovery  . . . :   Correct the invalid object specification and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5) (*CHAR 9)) MSGID(TMK9041) +
+             MSG('Unknown keyword &2 in line &1.') +
+             SECLVL('&N Cause . . . . . :   "&2" is an unsupported keyword starting with a ''.'' character. +
+                     &N Recovery  . . . :   Correct the syntax of the keyword &2 in the descriptin file and try +
+                     again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5) (*CHAR 32)) MSGID(TMK9042) +
+             MSG('TMKMAKE has detected recursive processing for ''&2'' in line &1.') +
+             SECLVL('&N Cause . . . . . :   The specified target in the description file is processed recursively +
+                     according to the rule defined. &N Recovery  . . . :   Verigy the rule in the description file +
+                     is correct and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5) (*CHAR 32)) MSGID(TMK9043) +
+             MSG('''&2'' is up-to-date in line &1.') +
+             SECLVL('&N Cause . . . . . :   The specified target has been processed by TMKMAKE and is now up-to-date. +
+                     &N Recovery  . . . :   None.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9044) +
+             MSG('Invalid ''-'' prefix severity limit specification in line &1.') +
+             SECLVL('&N Cause . . . . . :   The specified severity limit for the ''-'' prefix does not conform to +
+                     specification.  There must have at least 1 blank character after the severity limit. +
+                     &N Recovery  . . . :   Correct the description file and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5) (*CHAR 34)) MSGID(TMK9045) +
+             MSG('Macro &2 in line &1 can not be undefined.') +
+             SECLVL('&N Cause . . . . . :   The macro &2 was not previously defined. &N Recovery  . . . :   +
+                     Define the macro &2 and try again.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9046) +
+             MSG('Nested conditional directives exceeded the maximum allowed in line &1.') +
+             SECLVL('&N Recovery  . . . :   Correct the description file conditional directive nesting structure +
+                     and try again.')
+
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9047) +
+             MSG('Invalid macro syntax in line &1.') +
+             SECLVL('&N Cause . . . . . :   An invalid macro syntax was found in &1.  Probably missing ''='' +
+                     character in output translation macro format. &N Recovery  . . . :   Correct the invalid macro +
+                     syntax and try again.')
 
 
 
@@ -44,52 +487,52 @@ PGM PARM(&@SRCLIB &@DSTLIB)
   CHGLIBL    LIBL(*NONE)
 
   CRTCMOD    MODULE(&TMPLIB/TMKMAKER) SRCFILE(&SRCLIB/QATTSYSC) +
-             DBGVIEW(*ALL) OPTION(*EVENTF) +
+             DBGVIEW(&DBGMOD) OPTION(*EVENTF) +
              PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
   CRTCMOD    MODULE(&TMPLIB/TMKMAKEC) SRCFILE(&SRCLIB/QATTSYSC) +
-             DBGVIEW(*ALL) OPTION(*EVENTF) +
+             DBGVIEW(&DBGMOD) OPTION(*EVENTF) +
              PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
   CRTCMOD    MODULE(&TMPLIB/TMKPARSE) SRCFILE(&SRCLIB/QATTSYSC) +
-             DBGVIEW(*ALL) OPTION(*EVENTF) +
+             DBGVIEW(&DBGMOD) OPTION(*EVENTF) +
              PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
   CRTCMOD    MODULE(&TMPLIB/TMKFILE) SRCFILE(&SRCLIB/QATTSYSC) +
-             DBGVIEW(*ALL) OPTION(*EVENTF) +
+             DBGVIEW(&DBGMOD) OPTION(*EVENTF) +
              PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
   CRTCMOD    MODULE(&TMPLIB/TMKBUILT) SRCFILE(&SRCLIB/QATTSYSC) +
-             DBGVIEW(*ALL) OPTION(*EVENTF) +
+             DBGVIEW(&DBGMOD) OPTION(*EVENTF) +
              PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
   CRTCMOD    MODULE(&TMPLIB/TMKMSGHD) SRCFILE(&SRCLIB/QATTSYSC) +
-             DBGVIEW(*ALL) OPTION(*EVENTF) +
+             DBGVIEW(&DBGMOD) OPTION(*EVENTF) +
              PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
   CRTCMOD    MODULE(&TMPLIB/TMKDICT) SRCFILE(&SRCLIB/QATTSYSC) +
-             DBGVIEW(*ALL) OPTION(*EVENTF) +
+             DBGVIEW(&DBGMOD) OPTION(*EVENTF) +
              PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
   CRTCMOD    MODULE(&TMPLIB/TMKOPTIO) SRCFILE(&SRCLIB/QATTSYSC) +
-             DBGVIEW(*ALL) OPTION(*EVENTF) +
+             DBGVIEW(&DBGMOD) OPTION(*EVENTF) +
              PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
   CRTCMOD    MODULE(&TMPLIB/TMKUTIL) SRCFILE(&SRCLIB/QATTSYSC) +
-             DBGVIEW(*ALL) OPTION(*EVENTF) +
+             DBGVIEW(&DBGMOD) OPTION(*EVENTF) +
              PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
   CRTCMOD    MODULE(&TMPLIB/TMKEXPR) SRCFILE(&SRCLIB/QATTSYSC) +
-             DBGVIEW(*ALL) OPTION(*EVENTF) +
+             DBGVIEW(&DBGMOD) OPTION(*EVENTF) +
              PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
@@ -108,6 +551,18 @@ PGM PARM(&@SRCLIB &@DSTLIB)
 
 
 
+  /* СБОРКА КОМАНД ************************************************************/
+  CHGLIBL    LIBL(&TMPLIB)
+  SNDPGMMSG  MSG('BEGIN MONITORING') KEYVAR(&LOWKEY)
+
+  CRTCMD     CMD(&DSTLIB/TMKMAKE) PGM(&DSTLIB/TMKMAKEC) +
+             SRCFILE(&SRCLIB/QATTCMD) PMTFILE(&DSTLIB/TMKMSGF) +
+             OPTION(*EVENTF)
+  MONMSG     MSGID(CPF0000) EXEC(GOTO BADBUILD)
+
+
+
+
   /* ТОЧКИ ВЫХОДА *************************************************************/
   GOOD:                                                                         /* Все объекты собраны успешно */
   SNDPGMMSG  MSG('BEGIN MONITORING') KEYVAR(&LOWKEY)
@@ -115,21 +570,14 @@ PGM PARM(&@SRCLIB &@DSTLIB)
              MSGDTA('Done successful!')
   GOTO       FINALLY
 
-  BADFILE:                                                                      /* Не удалось выполнить компиляцию файла */
-  SNDPGMMSG  MSG('BEGIN MONITORING') KEYVAR(&LOWKEY)
+  BADFILE:                                                                      /* Не удалось создать файл встроенных макросов */
   SNDPGMMSG  MSGID(CPA2401) MSGF(QCPFMSG) MSGTYPE(*DIAG) +
-             MSGDTA('File compilation failed...')
+             MSGDTA('Built-in file create failed...')
   GOTO       FINALLY
 
-  BADSQLPRE:                                                                    /* Не удалось выполнить SQL препроцессинг */
-  SNDPGMMSG  MSG('BEGIN MONITORING') KEYVAR(&LOWKEY)
+  BADMSGF:                                                                      /* Не удалось создать файл сообщений */
   SNDPGMMSG  MSGID(CPA2401) MSGF(QCPFMSG) MSGTYPE(*DIAG) +
-             MSGDTA('SQL preprocessing failed...')
-  GOTO       FINALLY
-
-  BADRES:                                                                       /* Не удалось выполнить компиляцию ресурсов */
-  SNDPGMMSG  MSGID(CPA2401) MSGF(QCPFMSG) MSGTYPE(*DIAG) +
-             MSGDTA('Resource compilation failed...')
+             MSGDTA('Message file create failed...')
   GOTO       FINALLY
 
   BADMOD:                                                                       /* Не удалось выполнить компиляцию модуля */
