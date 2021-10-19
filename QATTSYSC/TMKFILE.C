@@ -241,8 +241,6 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
             break;
         default         :
             namncpy( fs->file, f, sz );
-            strcpy( fs->type, FS_T_PGM );
-            type_id  = OBJ_PGM;
         }
 
         /* base file spec parser; look for qualifier                  */
