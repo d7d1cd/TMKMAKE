@@ -247,34 +247,6 @@ Void    system_cmd_trap ( int sig ) {
 #else
         system_cmd_sev  = data->exmsg->exmsgsev;
 #endif
-#ifdef __ILEC400__
-        errcode.rtn_area_sz = 0;
-        QMHCHGEM (&(excinfo.Target),
-        0,
-        excinfo.Msg_Ref_Key,
-#if     DEBUG
-                opt_debug() ? MOD_HANDLE : MOD_RMVLOG,
-#else
-        MOD_RMVLOG,
-#endif
-        "",
-        0,
-        &errcode);
-#else
-
-        /* set exception action flag before returning back to exeption*/
-        /*      manager.                                              */
-        act             = data->sigact;
-        act->xhalt      =       /* Do not terminate exec of pgm       */
-        act->xpmsg      =       /* No runtime messages are issued     */
-        act->xumsg      =       /* No runtime messages are issued     */
-        act->xdebug     =       /* Do not invoke debugger             */
-        act->xdecerr    =       /* Do not decr run time counter       */
-        act->xresigprior=       /* Do not resignal exception          */
-        act->xresigouter=       /* Do not resignal exception          */
-        act->xrtntosgnler=      /* Do not resignal                    */
-        act->xremovemsg =  0;   /* remove message from job log        */
-#endif
 }
 
 
