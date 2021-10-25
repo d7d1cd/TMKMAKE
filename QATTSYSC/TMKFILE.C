@@ -168,18 +168,18 @@ Char    *namncpy ( Char *d, Char *s, Int16 sz ) {
   and can be followed by A-Z, a-z, 0-9, $, @ or _ character.
 ***********************************************************************/
 
-Char    *parse_obj_name ( Char *f, File_spec_t *fs,
-                          Int16 *len, Int16 line ) {
-        Char            *orgp   = f;
-        Char            *tp;
-        Char            *rp;
-        Int16           sz;
-        Int16           type_id;
-/* local constants definition of type_id                              */
-#define OBJ_DB          0
-#define OBJ_LIBFILE     1
-#define OBJ_PGM         2
-#define OBJ_INVALID     3
+Char* parse_obj_name(Char* f, File_spec_t* fs, Int16* len, Int16 line)
+{
+  // local constants definition of type_id
+  typedef enum {
+    OBJ_DB, OBJ_LIBFILE, PHONY, OBJ_INVALID
+  } TypeId;
+
+  Char*  orgp = f;
+  Char*  tp;
+  Char*  rp;
+  Int16  sz;
+  TypeId type_id;
 
 #ifdef SRVOPT
         if( srvopt_function() )
@@ -241,6 +241,7 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
             break;
         default         :
             namncpy( fs->file, f, sz );
+            type_id = PHONY;
         }
 
         /* base file spec parser; look for qualifier                  */
@@ -261,7 +262,7 @@ Char    *parse_obj_name ( Char *f, File_spec_t *fs,
                     type_id  = OBJ_INVALID;
                 }
                 switch( type_id ) {
-                case OBJ_PGM     :
+                case PHONY     :
                     /* change object type from *PGM to *FILE          */
                     strcpy( fs->type, FS_T_FILE );
                     fs->is_file  = TRUE;
