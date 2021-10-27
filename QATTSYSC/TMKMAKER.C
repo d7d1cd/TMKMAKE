@@ -245,7 +245,6 @@ system_cmd_trap(int sig)
 
 #ifdef __ILEC400__
   _INTRPT_Hndlr_Parms_T excinfo; // exception data structure
-  error_rtn errcode;
 #else
   sigdata_t *data; // pointer to exception data area
   sigact_t *act;   // pointer to exception action area
@@ -620,8 +619,8 @@ make_target(Rules_t *rp)
         {
           dump_dict();
         }
-        // execute all the command specified for current
-        // rule
+
+        // execute all the command specified for current rule
         while (cur_cmd != NULL)
         {
           Boolean no_echo = FALSE;
@@ -629,40 +628,37 @@ make_target(Rules_t *rp)
           Char echo_str[5];
           Char *cmd = cur_cmd->cmd_txt;
           Int32 cmd_sev = opt_get_rtncde_sev();
+
           // process the @ and - prefixes for each cmd
           while (*cmd == '@' || *cmd == '-')
           {
-            switch (*cmd)
-            {
-              case '@':
-                no_echo = TRUE;
-                break;
-              case '-':
-                no_err_stop = TRUE;
-                // look for severity level after -
-                if (isdigit(cmd[1]))
-                {
-                  ++cmd;
-                  cmd_sev = get_cmd_sev(&cmd);
-                  if (cmd_sev < 0)
-                  {
-                    // invalid value specified or
-                    // no space after digits
-                    log_error(INV_PREFIX_RTNSEV,
-                              NULL, cur_cmd->line);
-                    exit(TMK_EXIT_FAILURE);
-                  }
-                }
-                else
-                  cmd_sev = ~(1 << ((sizeof(cmd_sev) * 8) - 1));
+            if (*cmd == '@')
+              no_echo = TRUE;
 
-                break;
-            } // switch
+            else if (*cmd == '-')
+            {
+              no_err_stop = TRUE;
+              // look for severity level after -
+              if (isdigit(cmd[1]))
+              {
+                ++cmd;
+                cmd_sev = get_cmd_sev(&cmd);
+                no_err_stop = FALSE;
+                if (cmd_sev < 0)
+                {
+                  // invalid value specified or
+                  // no space after digits
+                  log_error(INV_PREFIX_RTNSEV, NULL, cur_cmd->line);
+                  exit(TMK_EXIT_FAILURE);
+                }
+              }
+              else cmd_sev = ~(1 << ((sizeof(cmd_sev) * 8) - 1));
+            }
 
             ++cmd;
           }
-          cmd = skip_white_spaces(cmd);
 
+          cmd = skip_white_spaces(cmd);
           cmd_is_make = (opt_no_execute() ? make_in_command(cmd) : FALSE);
 
           // expand text substitution(s) if needed
