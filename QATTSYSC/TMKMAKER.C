@@ -235,11 +235,14 @@ create_nested_make_cmd(Char *cmd, Buf_t *b)
 //  Function:    system_cmd_trap ()
 // =================================================================
 Static short system_cmd_sev;
+Static int   what_signal;
 
 Static
 Void
 system_cmd_trap(int sig)
 {
+  what_signal = sig;
+
 #ifdef __ILEC400__
   _INTRPT_Hndlr_Parms_T excinfo; // exception data structure
   error_rtn errcode;
@@ -631,47 +634,44 @@ make_target(Rules_t *rp)
           {
             switch (*cmd)
             {
-            case '@':
-              no_echo = TRUE;
-              break;
-            case '-':
-              no_err_stop = TRUE;
-              // look for severity level after -
-              if (isdigit(cmd[1]))
-              {
-                ++cmd;
-                cmd_sev = get_cmd_sev(&cmd);
-                if (cmd_sev < 0)
+              case '@':
+                no_echo = TRUE;
+                break;
+              case '-':
+                no_err_stop = TRUE;
+                // look for severity level after -
+                if (isdigit(cmd[1]))
                 {
-                  // invalid value specified or
-                  // no space after digits
-                  log_error(INV_PREFIX_RTNSEV,
-                            NULL, cur_cmd->line);
-                  exit(TMK_EXIT_FAILURE);
+                  ++cmd;
+                  cmd_sev = get_cmd_sev(&cmd);
+                  if (cmd_sev < 0)
+                  {
+                    // invalid value specified or
+                    // no space after digits
+                    log_error(INV_PREFIX_RTNSEV,
+                              NULL, cur_cmd->line);
+                    exit(TMK_EXIT_FAILURE);
+                  }
                 }
-              }
-              else
-                cmd_sev = ~(1 << ((sizeof(cmd_sev) * 8) - 1));
-              break;
-            }
+                else
+                  cmd_sev = ~(1 << ((sizeof(cmd_sev) * 8) - 1));
+
+                break;
+            } // switch
+
             ++cmd;
           }
           cmd = skip_white_spaces(cmd);
 
-          cmd_is_make = (opt_no_execute()
-                             ? make_in_command(cmd)
-                             : FALSE);
+          cmd_is_make = (opt_no_execute() ? make_in_command(cmd) : FALSE);
 
           // expand text substitution(s) if needed
           // of all the built-in macros
           cmd = bi_macro_substitution(cmd);
 
           // echo command line
-          if ((!no_echo && !opt_silent_mode()) ||
-              opt_no_execute())
-          {
+          if ((!no_echo && !opt_silent_mode()) || opt_no_execute())
             log_usrmsg(cmd);
-          }
 
           // check if special echo cmd and process
           strncpy(echo_str, cmd, 4);
@@ -688,19 +688,18 @@ make_target(Rules_t *rp)
           }
           else
           {
-            Int16 rc;
-
             // execute command
-            rc = exec_command(cmd, cur_cmd->line);
-            if (rc > cmd_sev)
+            Int16 rc = exec_command(cmd, cur_cmd->line);
+            if (rc >= cmd_sev)
             {
               // error/exception occurs, handle
               // depends on flags set
-              log_error(CMD_FAILED, NULL,
-                        cur_cmd->line);
-              if (!no_err_stop &&
-                  !opt_ignore_err_code())
-                exit(TMK_EXIT_FAILURE);
+              log_error(CMD_FAILED, NULL, cur_cmd->line);
+              if (!no_err_stop && !opt_ignore_err_code())
+              {
+                if (opt_except()) raise(what_signal);
+                else exit(TMK_EXIT_FAILURE);
+              }
             }
           }
           cur_cmd = cur_cmd->nxt;
