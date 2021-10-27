@@ -77,7 +77,6 @@ Static  Rules_t *next_rule = NULL;    /* next rule for iteration      */
  Forward references
 ***********************************************************************/
 
-Static  Void    free_element ( Element_t *e );
 Int32   evaluate_exp ( Char *tp, Int16 line );
 
 /* ================================================================= */

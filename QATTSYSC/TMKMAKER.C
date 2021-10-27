@@ -226,6 +226,7 @@ Char    *create_nested_make_cmd ( Char *cmd, Buf_t *b ) {
 
 Static  short    system_cmd_sev;
 
+Static
 Void    system_cmd_trap ( int sig ) {
 #ifdef __ILEC400__
         _INTRPT_Hndlr_Parms_T excinfo; /* exception data structure   */
