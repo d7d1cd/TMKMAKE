@@ -339,6 +339,12 @@ Void    process_options ( Char **argv ) {
             case 'D'        :  /* DEBUG */
                     options |= OPT_DEBUG;
                     break;
+            case 'Y'        :  /* NOEXCEPT */
+                    options &= ~OPT_EXCEPT;
+                    break;
+            case 'Z'        :  /* EXCEPT */
+                    options |= OPT_EXCEPT;
+                    break;
             }
             ++cp;
         }
@@ -660,5 +666,9 @@ Boolean opt_touch_target ( void ) {
 
 Boolean opt_debug ( void ) {
         return( options & OPT_DEBUG );
+}
+
+Boolean opt_except ( void ) {
+        return( options & OPT_EXCEPT );
 }
 

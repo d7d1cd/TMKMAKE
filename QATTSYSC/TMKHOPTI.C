@@ -46,10 +46,13 @@
 #define OPT_TOUCH               0x0010       /* touch target files   */
 #define OPT_NODEBUG             0x0000       /* NO debug information */
 #define OPT_DEBUG               0x0020       /* debug information    */
+#define OPT_NOEXCEPT            0x0000       /* NO raise exception   */
+#define OPT_EXCEPT              0x0040       /* raise exception      */
 
 #define OPT_DEFAULT             OPT_NOIGNORE | OPT_NOSILENT |  \
                                 OPT_BIRULES  | OPT_EXEC     |  \
-                                OPT_NOTOUCH  | OPT_NODEBUG
+                                OPT_NOTOUCH  | OPT_NODEBUG  |  \
+                                OPT_NOEXCEPT
 
 /*      AS/400 MAKE return code handling definitions                 */
 #define RTN_EXCEPTION           0x01         /* exception handling   */
@@ -133,6 +136,7 @@ Boolean opt_no_built_in_rule ( Void );
 Boolean opt_no_execute ( Void );
 Boolean opt_touch_target ( Void );
 Boolean opt_debug ( Void );
+Boolean opt_except ( Void );
 
 #endif  /* _TMKHOPTI_H */
 

@@ -31,7 +31,7 @@
 /*                                                                 */
 /*******************************************************************/
  TMKMAKE: CMD PROMPT(TMK0001)
- 
+
  /*                                             */
  /*  TARGET LABEL - TARGET(*FIRST)              */
  /*                                             */
@@ -42,7 +42,7 @@
                       DFT(*FIRST)                                 +
                       SPCVAL((*FIRST '*FIRST'))                   +
                       PROMPT(TMK0002)
- 
+
  /*                                             */
  /*  SOURCE FILE - SRCFILE(LIB/FILE)            */
  /*                                             */
@@ -51,7 +51,7 @@
                       TYPE(Q1)                                    +
                       FILE(*IN)                                   +
                       PROMPT(TMK0003)
- 
+
  /*                                             */
  /*  SOURCE MEMBER - SRCMBR(MBR)                */
  /*                                             */
@@ -63,7 +63,7 @@
                              (*ALL   '*ALL'  )                    +
                             )                                     +
                       PROMPT(TMK0005)
- 
+
  /*                                             */
  /*  MACRO DEFINITIONS - MACRO(MARCO)           */
  /*                                             */
@@ -72,7 +72,7 @@
                       TYPE(*CHAR)                                 +
                       MIN(0) MAX(50)                              +
                       PROMPT(TMK0006)
- 
+
  /*                                             */
  /*  OPTIONS - OPTION(OPTIONS)                  */
  /*                                             */
@@ -93,11 +93,13 @@
                              (*TOUCH          T)                  +
                              (*NODEBUG        X)                  +
                              (*DEBUG          D)                  +
+                             (*NOEXCEPT       Y)                  +
+                             (*EXCEPT         Z)                  +
                             )                                     +
                       PROMPT(TMK0007)                             +
                       CHOICE(*NONE)                               +
                       MIN(0) MAX(10)
- 
+
  /*                                             */
  /* MARGINS - Source margins to use to extract  */
  /*           data from the file.               */
@@ -105,7 +107,7 @@
                       PMTCTL(*PMTRQS)                             +
                       TYPE(Q2)                                    +
                       PROMPT(TMK0008)
- 
+
  /*                                             */
  /* RETURN CODE HANDLING - RTNCDE(*EXCEPTION)   */
  /*                                             */
@@ -113,7 +115,7 @@
                       PMTCTL(*PMTRQS)                             +
                       TYPE(Q3)                                    +
                       PROMPT(TMK0011)
- 
+
  /*                                             */
  /*  MESSAGE LOGGIN METHODS - MSGLOG(*JOBLOG)   */
  /*                                             */
@@ -128,7 +130,7 @@
                              (*SESSION       S)                   +
                             )                                     +
                       PROMPT(TMK0013)
- 
+
  /*                                             */
  /*  Service option (internal) for debugging    */
  /*                                             */
@@ -153,7 +155,7 @@
                             )                                     +
                       MIN(0) MAX(9)                               +
                       PROMPT('Internal service options')
- 
+
  /*                                             */
  /* SOURCE FILE INPUT WITH QUALIFIER            */
  /*                                             */
@@ -161,13 +163,13 @@
  Q1:     QUAL       TYPE(*NAME) LEN(10)                           +
                       RSTD(*NO)                                   +
                       DFT(QMAKSRC)                                 +
- 
+
          QUAL       TYPE(*NAME) LEN(10)                           +
                       RSTD(*NO)                                   +
                       DFT(*LIBL)                                  +
                       SPCVAL((*LIBL '*LIBL') (*CURLIB '*CURLIB')) +
                       PROMPT(TMK0004)
- 
+
  /*                                              */
  /* SOURCE MARGINS                               */
  /*                                              */
@@ -176,12 +178,12 @@
                       RANGE(1 32754)                              +
                       SPCVAL((*SRCFILE 0))                        +
                       PROMPT(TMK0009)
- 
+
          ELEM       TYPE(*INT2)                                   +
                       DFT(256)                                    +
                       RANGE(1 32754)                              +
                       PROMPT(TMK0010)
- 
+
  /*                                             */
  /* FLAGGING LEVEL - Indicates level of messages*/
  /*                  to be displayed.           */
@@ -194,9 +196,9 @@
                              (*BOTH       3)                      +
                             )                                     +
                       PROMPT(TMK0014)
- 
+
          ELEM       TYPE(*INT2)                                   +
                       DFT(30)                                     +
                       RANGE(0 40)                                 +
                       PROMPT(TMK0012)
- 
+
