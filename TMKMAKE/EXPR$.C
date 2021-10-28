@@ -16,13 +16,13 @@
 #include        <string.h>
 #include        <ctype.h>
 
-#include        "tmkhbase.qattsysc"
-#include        "tmkhmsgh.qattsysc"
-#include        "tmkhutil.qattsysc"
-#include        "tmkhdict.qattsysc"
-#include        "tmkhfile.qattsysc"
-#include        "tmkhpars.qattsysc"
-#include        "tmkhopti.qattsysc"
+#include        "base"
+#include        "msghandle"
+#include        "utility"
+#include        "diction"
+#include        "file"
+#include        "parser"
+#include        "option"
 
 int     yyparse( Void );
 Int32   yylex( Void );

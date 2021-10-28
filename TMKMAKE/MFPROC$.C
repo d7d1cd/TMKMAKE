@@ -21,16 +21,16 @@
 #include <milib.h>
 #endif
 
-#include "tmkhbase.qattsysc"
-#include "tmkhmake.qattsysc"
-#include "tmkhutil.qattsysc"
-#include "tmkhfile.qattsysc"
-#include "tmkhpars.qattsysc"
-#include "tmkhdict.qattsysc"
-#include "tmkhbuil.qattsysc"
-#include "tmkhopti.qattsysc"
-#include "tmkhopna.qattsysc"
-#include "tmkhmsgh.qattsysc"
+#include "base"
+#include "mfproc"
+#include "utility"
+#include "file"
+#include "parser"
+#include "diction"
+#include "builtin"
+#include "option"
+#include "sysapi"
+#include "msghandle"
 
 #ifdef __ILEC400__
 #define __rtvlurc() (_LU_WORK_AREA->LU_RC)
@@ -38,18 +38,15 @@
 short __rtvlurc(void);
 #endif //@01
 
-
 //**********************************************************************
 //        Variable declarations
 //**********************************************************************
 Static Boolean cmd_is_make;
 
-
 // =================================================================
 //  Function:    set_proc_date
 // =================================================================
-Static
-void
+Static void
 set_proc_date(File_spec_t *tfs, File_spec_t *dfs)
 {
   if (cmp_date(tfs->proc_update, dfs->last_update) < 0)
@@ -63,7 +60,6 @@ set_proc_date(File_spec_t *tfs, File_spec_t *dfs)
   }
 }
 
-
 // =================================================================
 //  Function:    target_older
 //  Description: To determine if one or more of the dependent(s)
@@ -73,8 +69,8 @@ set_proc_date(File_spec_t *tfs, File_spec_t *dfs)
 //  Output:
 // =================================================================
 Static
-Boolean
-target_older(Element_t *t, Element_t *d, Int16 line, Date_t last_update)
+    Boolean
+    target_older(Element_t *t, Element_t *d, Int16 line, Date_t last_update)
 {
   Element_t *ep;
   Boolean rc = FALSE;
@@ -152,13 +148,12 @@ target_older(Element_t *t, Element_t *d, Int16 line, Date_t last_update)
   return (rc);
 }
 
-
 // =================================================================
 //  Function:    make_in_command ()
 // =================================================================
 Static
-Boolean
-make_in_command(Char *cmd)
+    Boolean
+    make_in_command(Char *cmd)
 {
   Char *cp;
   Char *s;
@@ -186,13 +181,12 @@ make_in_command(Char *cmd)
   return (rc);
 }
 
-
 // =================================================================
 //  Function:    create_nested_make_cmd ()
 // =================================================================
 Static
-Char*
-create_nested_make_cmd(Char *cmd, Buf_t *b)
+    Char *
+    create_nested_make_cmd(Char *cmd, Buf_t *b)
 {
   Char *tp;
   Char save;
@@ -230,16 +224,15 @@ create_nested_make_cmd(Char *cmd, Buf_t *b)
   return (b->bp);
 }
 
-
 // =================================================================
 //  Function:    system_cmd_trap ()
 // =================================================================
 Static short system_cmd_sev;
-Static int   what_signal;
+Static int what_signal;
 
 Static
-Void
-system_cmd_trap(int sig)
+    Void
+    system_cmd_trap(int sig)
 {
   what_signal = sig;
 
@@ -264,7 +257,6 @@ system_cmd_trap(int sig)
 #endif
 }
 
-
 //**********************************************************************
 // Note:   system specific routines
 //**********************************************************************
@@ -272,8 +264,8 @@ system_cmd_trap(int sig)
 //  Function:    convert_to_pack ()
 // =================================================================
 Static
-Void
-convert_to_pack(Char *buf, Int16 rm, Int16 num)
+    Void
+    convert_to_pack(Char *buf, Int16 rm, Int16 num)
 {
   Char pc;
 
@@ -287,7 +279,6 @@ convert_to_pack(Char *buf, Int16 rm, Int16 num)
   }
 }
 
-
 // =================================================================
 //  Function:    exec_command ()
 // =================================================================
@@ -295,8 +286,8 @@ convert_to_pack(Char *buf, Int16 rm, Int16 num)
 void QCMDEXC(Char *, void *);
 
 Static
-Int16
-exec_command(Char *cmd, Int16 line)
+    Int16
+    exec_command(Char *cmd, Int16 line)
 {
   Int16 rc = 0;
   Int16 rm;
@@ -373,7 +364,6 @@ exec_command(Char *cmd, Int16 line)
   return (rc);
 }
 
-
 // =================================================================
 //  Function:    set_pre_defined_macros ()
 // =================================================================
@@ -385,8 +375,8 @@ exec_command(Char *cmd, Int16 line)
 //        $<,$(<L),$(<F),$(<M),$(<T),$(<S)
 //**********************************************************************
 Static
-Void
-set_pre_defined_macros(Rules_t *rp)
+    Void
+    set_pre_defined_macros(Rules_t *rp)
 {
   Element_t *ep;
   Date_t target_date;
@@ -505,13 +495,12 @@ set_pre_defined_macros(Rules_t *rp)
   }
 }
 
-
 // =================================================================
 //  Function:    get_cmd_sev ()
 // =================================================================
 Static
-Int32
-get_cmd_sev(Char **cmd)
+    Int32
+    get_cmd_sev(Char **cmd)
 {
   Int32 rc = 0;
   Char *cp = *cmd;
@@ -539,13 +528,12 @@ get_cmd_sev(Char **cmd)
   return (rc);
 }
 
-
 // =================================================================
 //  Function:    make_target ()
 // =================================================================
 Static
-Boolean
-make_target(Rules_t *rp)
+    Boolean
+    make_target(Rules_t *rp)
 {
   Element_t *ep;
   Rules_t *drp;
@@ -652,7 +640,8 @@ make_target(Rules_t *rp)
                   exit(TMK_EXIT_FAILURE);
                 }
               }
-              else cmd_sev = ~(1 << ((sizeof(cmd_sev) * 8) - 1));
+              else
+                cmd_sev = ~(1 << ((sizeof(cmd_sev) * 8) - 1));
             }
 
             ++cmd;
@@ -693,8 +682,10 @@ make_target(Rules_t *rp)
               log_error(CMD_FAILED, NULL, cur_cmd->line);
               if (!no_err_stop && !opt_ignore_err_code())
               {
-                if (opt_except()) raise(what_signal);
-                else exit(TMK_EXIT_FAILURE);
+                if (opt_except())
+                  raise(what_signal);
+                else
+                  exit(TMK_EXIT_FAILURE);
               }
             }
           }
@@ -739,12 +730,10 @@ make_target(Rules_t *rp)
   return (rc);
 }
 
-
 // =================================================================
 //  Function:    process_makefile ()
 // =================================================================
-Void
-process_makefile(Void)
+Void process_makefile(Void)
 {
   Rules_t *make_rule;
 
@@ -771,4 +760,3 @@ process_makefile(Void)
     make_rule = get_next_applied_target();
   }
 }
-
