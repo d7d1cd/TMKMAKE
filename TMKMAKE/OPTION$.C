@@ -472,9 +472,7 @@ Void process_options(Char **argv)
     signal(SIGABRT, old_signal_fct);
     if (obj_not_exist_flag == LSTOBJ_NOT_FOUND)
     {
-      log_error(CANT_OPEN_MAKEFILE, makefile_name,
-                MSG_NO_LINE_NO);
-      exit(TMK_EXIT_FAILURE);
+      log_error_and_exit(CANT_OPEN_MAKEFILE, makefile_name, MSG_NO_LINE_NO);
     }
 
     QUSPTRUS(LST_USRSPC_NM, &list_header);
@@ -486,8 +484,7 @@ Void process_options(Char **argv)
     {
       sprintf(makefile_mbr + 1, "%5.5d%s",
               mbr_count, makefile_name);
-      log_error(TOO_MANY_MBR, makefile_mbr + 1,
-                MSG_NO_LINE_NO);
+      log_error(TOO_MANY_MBR, makefile_mbr + 1, MSG_NO_LINE_NO);
     }
 
 #ifdef SRVOPT
@@ -498,9 +495,7 @@ Void process_options(Char **argv)
 #endif
     if (mbr_count == 0)
     {
-      log_error(ALL_NO_MBR, makefile_name,
-                MSG_NO_LINE_NO);
-      exit(TMK_EXIT_FAILURE);
+      log_error_and_exit(ALL_NO_MBR, makefile_name, MSG_NO_LINE_NO);
     }
 
     while (mbr_count--)

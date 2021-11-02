@@ -81,6 +81,7 @@
 
 Void set_usrmsg_to_session(Void);
 Boolean get_usrmsg_to_session(Void);
+Void log_error_and_exit(Char *msgid, Char *txt, Int32 line_no);
 Void log_error(Char *msgid, Char *txt, Int32 line_no);
 Void log_usrmsg(Char *txt);
 Void log_dbg(Char *txt);

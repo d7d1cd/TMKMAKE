@@ -118,8 +118,7 @@ Void read_qmaksrc_builtin(Void)
       {
         /* builtin rule file not found, output message    */
         /*  and continues                                 */
-        log_error(BUITLIN_QMAKSRC_NOT_FOUND, NULL,
-                  MSG_NO_LINE_NO);
+        log_error(BUITLIN_QMAKSRC_NOT_FOUND, NULL, MSG_NO_LINE_NO);
       }
     }
   }
@@ -766,8 +765,7 @@ Void update_inference_rules(Char *dp, Cmd_t *cp, Int16 line)
 
   if (!parse_inference_rule(dp, &dfs, &tfs))
   {
-    log_error(INV_INF_RULE, NULL, line);
-    exit(TMK_EXIT_FAILURE);
+    log_error_and_exit(INV_INF_RULE, NULL, line);
   }
 
   if ((trp = in_infer_target(&tfs, infer_rules)) == NULL)

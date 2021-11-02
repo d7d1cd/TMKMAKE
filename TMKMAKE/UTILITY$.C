@@ -226,8 +226,7 @@ Void *alloc_buf(Int16 sz, Char *err_txt)
 
   if ((rtn_txt = malloc(sz)) == NULL)
   {
-    log_error(NO_HEAP, err_txt, MSG_NO_LINE_NO);
-    exit(TMK_EXIT_FAILURE);
+    log_error_and_exit(NO_HEAP, err_txt, MSG_NO_LINE_NO);
   }
   return (rtn_txt);
 }

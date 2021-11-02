@@ -509,8 +509,7 @@ Static
       if (*mp != ')')
       {
         /* macro ()'s mismatch                            */
-        log_error(MISMATCH_PARENTH, NULL, line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(MISMATCH_PARENTH, NULL, line);
       }
       ++mp;
       if (nmsz != 0)
@@ -550,16 +549,14 @@ Static
           if (to == NULL)
           {
             /* macro ()'s mismatch                    */
-            log_error(INV_OUTPUT_MACRO, NULL, line);
-            exit(TMK_EXIT_FAILURE);
+            log_error_and_exit(INV_OUTPUT_MACRO, NULL, line);
           }
           ++to;
           end = strchr(to, ')');
           if (end == NULL)
           {
             /* macro ()'s mismatch                    */
-            log_error(MISMATCH_PARENTH, NULL, line);
-            exit(TMK_EXIT_FAILURE);
+            log_error_and_exit(MISMATCH_PARENTH, NULL, line);
           }
           rp = output_translate(rp, from, to, end);
           mp = end;
@@ -574,8 +571,7 @@ Static
       if (*mp != ')')
       {
         /* macro ()'s mismatch                            */
-        log_error(MISMATCH_PARENTH, NULL, line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(MISMATCH_PARENTH, NULL, line);
       }
       *txt = mp + 1;
     }
