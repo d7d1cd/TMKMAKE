@@ -48,9 +48,11 @@ Boolean get_usrmsg_to_session(Void)
 
 
 // =================================================================
-//  Function:    log_error ()
+//  Function:    log_error_msgt ()
 // =================================================================
-Void log_error(Char *msgid, Char *txt, Int32 line_no)
+Static
+Void
+log_error_msgt(Char *msgid, Char *txt, Int32 line_no, Char* msgt)
 {
   Char *msg = msg_txt;
   Int32 msg_sz = 0;
@@ -72,8 +74,19 @@ Void log_error(Char *msgid, Char *txt, Int32 line_no)
     msg_sz += tmp_sz;
   }
 
-  QMHSNDPM(msgid, MSGF_PATH, msg_txt, msg_sz, MSGT_COMPLETE,
+  QMHSNDPM(msgid, MSGF_PATH, msg_txt, msg_sz, msgt,
            "*         ", 0, msg_key, (char *)&errrtn);
+}
+
+
+// =================================================================
+//  Function:    log_error_and_exit ()
+// =================================================================
+Void log_error_and_exit(Char *msgid, Char *txt, Int32 line_no)
+{
+  Char* msgt = opt_except() ? MSGT_ESCAPE : MSGT_COMPLETE;
+  log_error_msgt(msgid, txt, line_no, msgt);
+  exit(TMK_EXIT_FAILURE);
 }
 
 
