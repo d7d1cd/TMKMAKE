@@ -228,14 +228,11 @@ Static
 //  Function:    system_cmd_trap ()
 // =================================================================
 Static short system_cmd_sev;
-Static int what_signal;
 
 Static
     Void
     system_cmd_trap(int sig)
 {
-  what_signal = sig;
-
 #ifdef __ILEC400__
   _INTRPT_Hndlr_Parms_T excinfo; // exception data structure
 #else
@@ -310,8 +307,7 @@ Static
     rm = strlen(cmd);
     if (rm > QCMDEXC_MAX_SZ)
     {
-      log_error(CMD_EXCEEDED_3000, NULL, line);
-      exit(TMK_EXIT_FAILURE);
+      log_error_and_exit(CMD_EXCEEDED_3000, NULL, line);
     }
     // set up QCMDEXC command structure to be executed
     convert_to_pack((char *)&qcmd, rm, 5);
@@ -343,8 +339,7 @@ Static
       rm = strlen(cmd);
       if (rm > QCMDEXC_MAX_SZ)
       {
-        log_error(CMD_EXCEEDED_3000, NULL, line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(CMD_EXCEEDED_3000, NULL, line);
       }
       // set up QCMDEXC command structure to be executed
       convert_to_pack((char *)&qcmd, rm, 5);
@@ -581,8 +576,7 @@ Static
       // update the dependent date, this must exist
       if (!ep->maked && !obj_exists(&ep->fs, rp->line))
       {
-        log_error(CANT_PROC_TARGET, ep->name, rp->line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(CANT_PROC_TARGET, ep->name, rp->line);
       }
       ep = ep->nxt;
     }
@@ -636,8 +630,7 @@ Static
                 {
                   // invalid value specified or
                   // no space after digits
-                  log_error(INV_PREFIX_RTNSEV, NULL, cur_cmd->line);
-                  exit(TMK_EXIT_FAILURE);
+                  log_error_and_exit(INV_PREFIX_RTNSEV, NULL, cur_cmd->line);
                 }
               }
               else
@@ -679,14 +672,10 @@ Static
             {
               // error/exception occurs, handle
               // depends on flags set
-              log_error(CMD_FAILED, NULL, cur_cmd->line);
               if (!no_err_stop && !opt_ignore_err_code())
-              {
-                if (opt_except())
-                  raise(what_signal);
-                else
-                  exit(TMK_EXIT_FAILURE);
-              }
+                log_error_and_exit(CMD_FAILED, NULL, cur_cmd->line);
+              else
+                log_error(CMD_FAILED, NULL, cur_cmd->line);
             }
           }
           cur_cmd = cur_cmd->nxt;
@@ -754,8 +743,7 @@ Void process_makefile(Void)
     // make the target and its dependents recursively
     make_target(make_rule);
     // log message about the target is up-to-date
-    log_error(TARGET_UP_TO_DATE, make_rule->target->name,
-              make_rule->line);
+    log_error(TARGET_UP_TO_DATE, make_rule->target->name, make_rule->line);
     // get next target specified in the STRMAKE command
     make_rule = get_next_applied_target();
   }

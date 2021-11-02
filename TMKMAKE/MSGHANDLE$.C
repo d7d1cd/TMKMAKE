@@ -18,6 +18,7 @@
 #include "base"
 #include "msghandle"
 #include "sysapi"
+#include "option"
 
 
 // =================================================================
@@ -87,6 +88,15 @@ Void log_error_and_exit(Char *msgid, Char *txt, Int32 line_no)
   Char* msgt = opt_except() ? MSGT_ESCAPE : MSGT_COMPLETE;
   log_error_msgt(msgid, txt, line_no, msgt);
   exit(TMK_EXIT_FAILURE);
+}
+
+
+// =================================================================
+//  Function:    log_error ()
+// =================================================================
+Void log_error(Char *msgid, Char *txt, Int32 line_no)
+{
+  log_error_msgt(msgid, txt, line_no, MSGT_COMPLETE);
 }
 
 

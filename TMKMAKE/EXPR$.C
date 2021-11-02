@@ -161,9 +161,8 @@ yyerror(char *s)
         if( srvopt_function() )
             printf("FCT:yyerror(\"%s\")\n",s);
 #endif
-        log_error( memcmp( s, "yacc stack overflow", 19 ) == 0 ?
+        log_error_and_exit( memcmp( s, "yacc stack overflow", 19 ) == 0 ?
                 EXPR_TOO_COMPLICATE : EXPR_SYNTAX_ERROR, NULL, line_no );
-        exit( TMK_EXIT_FAILURE );
 }
 
 yywrap( Void )
@@ -172,8 +171,7 @@ yywrap( Void )
         if( srvopt_function() )
             printf("FCT:yywrap()\n");
 #endif
-        log_error( INTERNAL_EXPR_ERROR, NULL, line_no );
-        exit( TMK_EXIT_FAILURE );
+        log_error_and_exit( INTERNAL_EXPR_ERROR, NULL, line_no );
 }
 
 /* ================================================================= */
@@ -239,7 +237,8 @@ Int32   yylex( Void )
 
         /* parse a valid decimal/octal/hexadecimal number             */
         if( isdigit(c) ) {
-            if( yylval = ( c - '0' ) ) {
+            yylval = c - '0';
+            if( yylval ) {
                 /* first digit is non zero, must be decimal */
                 while( bc && isdigit( c = *bp ) ) {
                     yylval      *= 10;
@@ -264,13 +263,11 @@ Int32   yylex( Void )
                             }
                             if( bc && !isspace( *bp ) ) {
                                 /* invalid hex format  */
-                                log_error( INV_HEX_NO, NULL, line_no );
-                                exit( TMK_EXIT_FAILURE );
+                                log_error_and_exit( INV_HEX_NO, NULL, line_no );
                             }
                         } else {
                             /* invalid hex format  */
-                            log_error( INV_HEX_NO, NULL, line_no );
-                            exit( TMK_EXIT_FAILURE );
+                            log_error_and_exit( INV_HEX_NO, NULL, line_no );
                         }
                     } else {
                         /* convert octal number */
@@ -282,8 +279,7 @@ Int32   yylex( Void )
                         /* check for invalid octal number */
                         /* sequence                       */
                         if( bc && isdigit( c ) ) {
-                            log_error( INV_OCTAL_NO, NULL, line_no );
-                            exit( TMK_EXIT_FAILURE );
+                            log_error_and_exit( INV_OCTAL_NO, NULL, line_no );
                         }
                     }
                 }
@@ -384,8 +380,7 @@ check_more_or:
             }
         }
         if( c <= TOKEN_BASE ) {
-            log_error( EXPR_SYNTAX_ERROR, NULL, line_no );
-            exit( TMK_EXIT_FAILURE );
+            log_error_and_exit( EXPR_SYNTAX_ERROR, NULL, line_no );
         }
 
 #ifdef  SRVOPT
@@ -967,16 +962,14 @@ case 3:{        yyval   = yypvt[-2] * yypvt[-0];        } /*NOTREACHED*/ break;
 case 4:{        /* keep code in separate lines to avoid */
                         /* generated code over 80 chars/line    */
                         if( yypvt[-0] == 0 ) {
-                            log_error( DIVIDED_BY_ZERO, NULL, line_no );
-                            exit( TMK_EXIT_FAILURE );
+                            log_error_and_exit( DIVIDED_BY_ZERO, NULL, line_no );
                         }
                         yyval   = yypvt[-2] / yypvt[-0];
                 } /*NOTREACHED*/ break;
 case 5:{        /* keep code in separate lines to avoid */
                         /* generated code over 80 chars/line    */
                         if( yypvt[-0] == 0 ) {
-                            log_error( DIVIDED_BY_ZERO, NULL, line_no );
-                            exit( TMK_EXIT_FAILURE );
+                            log_error_and_exit( DIVIDED_BY_ZERO, NULL, line_no );
                         }
                         yyval   = yypvt[-2] % yypvt[-0];
                 } /*NOTREACHED*/ break;

@@ -217,8 +217,7 @@ Char *parse_obj_name(Char *f, File_spec_t *fs, Int16 *len, Int16 line)
     f = tp + 1;
     if ((tp = valid_name(f, &sz)) == NULL)
     {
-      log_error(INV_OBJ_SPEC, NULL, line);
-      exit(TMK_EXIT_FAILURE);
+      log_error_and_exit(INV_OBJ_SPEC, NULL, line);
     }
   }
 
@@ -230,8 +229,7 @@ Char *parse_obj_name(Char *f, File_spec_t *fs, Int16 *len, Int16 line)
     f = tp + 1;
     if ((tp = valid_name(f, &sz)) == NULL)
     {
-      log_error(INV_OBJ_SPEC, NULL, line);
-      exit(TMK_EXIT_FAILURE);
+      log_error_and_exit(INV_OBJ_SPEC, NULL, line);
     }
     namncpy(fs->file, f, sz);
     strcpy(fs->type, FS_T_FILE);
@@ -247,8 +245,7 @@ Char *parse_obj_name(Char *f, File_spec_t *fs, Int16 *len, Int16 line)
         *tp != ')')
     {
       /* invalid object specification                       */
-      log_error(INV_OBJ_SPEC, NULL, line);
-      exit(TMK_EXIT_FAILURE);
+      log_error_and_exit(INV_OBJ_SPEC, NULL, line);
     }
     namncpy(fs->extmbr, f, sz);
     strcpy(fs->type, FS_T_LIBFILE);
@@ -269,8 +266,7 @@ Char *parse_obj_name(Char *f, File_spec_t *fs, Int16 *len, Int16 line)
         (*f == '*'))
     {
       /* invalid object specification                       */
-      log_error(INV_OBJ_SPEC, NULL, line);
-      exit(TMK_EXIT_FAILURE);
+      log_error_and_exit(INV_OBJ_SPEC, NULL, line);
     }
 
     /* special processing for <FILE.... type                  */
@@ -300,8 +296,7 @@ Char *parse_obj_name(Char *f, File_spec_t *fs, Int16 *len, Int16 line)
           if (tp == NULL || sz > SEU_TYP_SZ ||
               *tp != '>')
           {
-            log_error(INV_OBJ_SPEC, NULL, line);
-            exit(TMK_EXIT_FAILURE);
+            log_error_and_exit(INV_OBJ_SPEC, NULL, line);
           }
           /* set up seu type in fs structure            */
           namncpy(fs->seu_type, f, sz);
@@ -309,8 +304,7 @@ Char *parse_obj_name(Char *f, File_spec_t *fs, Int16 *len, Int16 line)
         break;
       case OBJ_LIBFILE:
       default:
-        log_error(INV_OBJ_SPEC, NULL, line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(INV_OBJ_SPEC, NULL, line);
       }
     }
     else
@@ -318,8 +312,7 @@ Char *parse_obj_name(Char *f, File_spec_t *fs, Int16 *len, Int16 line)
       /* non-*FILE type processing                          */
       if (*tp != '>' && *tp != ',')
       {
-        log_error(INV_OBJ_SPEC, NULL, line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(INV_OBJ_SPEC, NULL, line);
       }
       memcpy(fs->type, f, sz);
       fs->type[sz] = 0;
@@ -762,8 +755,7 @@ Boolean update_file_date(File_spec_t *fs, Int16 line)
                  conv_as400_date(od.creation_date));
         break;
       case LSTOBJ_INVALID_TYPE:
-        log_error(INV_OBJ_SPEC, NULL, line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(INV_OBJ_SPEC, NULL, line);
       }
     } /* if ( *fs->extmbr == 0 ) */
     else
@@ -796,8 +788,7 @@ Boolean update_file_date(File_spec_t *fs, Int16 line)
       {
         if (obj_not_exist_flag == LSTOBJ_INVALID_TYPE)
         {
-          log_error(INV_OBJ_SPEC, NULL, line);
-          exit(TMK_EXIT_FAILURE);
+          log_error_and_exit(INV_OBJ_SPEC, NULL, line);
         }
         if (opt_debug())
         {
@@ -881,8 +872,7 @@ Boolean update_file_date(File_spec_t *fs, Int16 line)
       {
         if (obj_not_exist_flag == LSTOBJ_INVALID_TYPE)
         {
-          log_error(INV_OBJ_SPEC, NULL, line);
-          exit(TMK_EXIT_FAILURE);
+          log_error_and_exit(INV_OBJ_SPEC, NULL, line);
         }
 
         /* memeber not found in current *FILE, search next*/
@@ -1106,8 +1096,7 @@ Boolean update_file_date(File_spec_t *fs, Int16 line)
                conv_as400_date(od.creation_date));
       break;
     case LSTOBJ_INVALID_TYPE:
-      log_error(INV_OBJ_SPEC, NULL, line);
-      exit(TMK_EXIT_FAILURE);
+      log_error_and_exit(INV_OBJ_SPEC, NULL, line);
     }
   }
   signal(SIGALL, old_signal_fct);

@@ -47,7 +47,6 @@ Static Int16 rd_line;  /* makefile next read line no   */
 
 Static Int16 ibuf1_sz = WRKBUF_SZ; /* initial input file record len*/
 Static Char *ibuf1;                /* description file input buffer*/
-Static Char *nxt_ip;               /* next input char pointer      */
 
 Static Int16 ibuf2_sz = 0; /* buffer 2 size                */
 Static Char *ibuf2 = NULL; /* description file input buffer*/
@@ -814,8 +813,7 @@ Static
       }
       else
       {
-        log_error(MULT_RULE_SAME_TARGET, NULL, rp->line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(MULT_RULE_SAME_TARGET, NULL, rp->line);
       }
       /* set target to next in list                         */
       tp = target;
@@ -1050,8 +1048,7 @@ try_again:
       if (++cur_mf_lvl >= max_mf_lvl)
       {
         /* over max nested include level - error          */
-        log_error(NEST_INCL_EXCEED_MAX, NULL, cur_line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(NEST_INCL_EXCEED_MAX, NULL, cur_line);
       }
 
       tp = skip_non_white_spaces(tp);
@@ -1100,8 +1097,7 @@ try_again:
       }
       else
       {
-        log_error(CANT_OPEN_INCLUDE, fn, cur_line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(CANT_OPEN_INCLUDE, fn, cur_line);
       }
     } /* if( cd->active && ...include processing */
   }   /* if( *ibuf2 == '#' ) else */
@@ -1207,13 +1203,11 @@ Static
     case CD_ELIF:
       if (*tp == 0)
       {
-        log_error(NO_EXPR_IN_IF_ELIF, NULL, line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(NO_EXPR_IN_IF_ELIF, NULL, line);
       }
       if (tp == ep)
       {
-        log_error(EXPR_SYNTAX_ERROR, NULL, line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(EXPR_SYNTAX_ERROR, NULL, line);
       }
       /* evaluate expression value                          */
       *exp_value = evaluate_exp(tp, line);
@@ -1223,13 +1217,11 @@ Static
     case CD_IFNDEF:
       if (*tp == 0)
       {
-        log_error(NO_EXPR_IN_IF_ELIF, NULL, line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(NO_EXPR_IN_IF_ELIF, NULL, line);
       }
       if (tp == ep)
       {
-        log_error(EXPR_SYNTAX_ERROR, NULL, line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(EXPR_SYNTAX_ERROR, NULL, line);
       }
       /* look for macro definitions                         */
       if (cd->active)
@@ -1277,8 +1269,7 @@ Static
 #endif
   if (++cur_cd_lvl >= max_cd_lvl)
   {
-    log_error(NEST_DIRECTIVE_EXCEED_MAX, NULL, MSG_NO_LINE_NO);
-    exit(TMK_EXIT_FAILURE);
+    log_error_and_exit(NEST_DIRECTIVE_EXCEED_MAX, NULL, MSG_NO_LINE_NO);
   }
   ++cd;
   cd->op = op;
@@ -1344,8 +1335,7 @@ Static
       if (cur_cd_lvl != 0)
       {
         /* unmatch nested conditional directives          */
-        log_error(UNEXPECT_EOF, rd_ln, MSG_NO_LINE_NO);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(UNEXPECT_EOF, rd_ln, MSG_NO_LINE_NO);
       }
       break;
     }
@@ -1371,8 +1361,7 @@ Static
     case CD_ELIF:
       if ((cd_op & cd->cd_expected) == 0)
       {
-        log_error(MISPLACE_ELIF, NULL, *line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(MISPLACE_ELIF, NULL, *line);
       }
       prev_active = cd->ifelse_before;
       cd_pop();
@@ -1393,8 +1382,7 @@ Static
     case CD_ELSE:
       if ((cd_op & cd->cd_expected) == 0)
       {
-        log_error(MISPLACE_ELSE, NULL, *line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(MISPLACE_ELSE, NULL, *line);
       }
       prev_active = cd->ifelse_before;
       cd_pop();
@@ -1406,8 +1394,7 @@ Static
     case CD_ENDIF:
       if ((cd_op & cd->cd_expected) == 0)
       {
-        log_error(MISPLACE_ENDIF, NULL, *line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(MISPLACE_ENDIF, NULL, *line);
       }
       cd_pop();
       break;
@@ -1434,15 +1421,15 @@ Static
       if (get_usrmsg_to_session())
       {
         fprintf(stdout, "Error directive: %s\n", rd_ln);
+        exit(TMK_EXIT_FAILURE);
       }
       else
       {
-        log_error(ERROR_DIRECTIVE, rd_ln, MSG_NO_LINE_NO);
+        log_error_and_exit(ERROR_DIRECTIVE, rd_ln, MSG_NO_LINE_NO);
       }
-      exit(TMK_EXIT_FAILURE);
+
     case CD_UNKNOWN:
-      log_error(UNKNOWN_DIRECTIVE, rd_ln, *line);
-      exit(TMK_EXIT_FAILURE);
+      log_error_and_exit(UNKNOWN_DIRECTIVE, rd_ln, *line);
     }
   }
 #ifdef SRVOPT
@@ -1486,9 +1473,7 @@ Static
 
       if ((tp = look_for(txt + txt_sz, kp->look_char)) == NULL)
       {
-        log_error(INV_KEYWORD_FORMAT, kp->match_txt,
-                  cur_line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(INV_KEYWORD_FORMAT, kp->match_txt, cur_line);
       }
       *tp++ = 0;
       skip_trail_spaces(txt);
@@ -1682,8 +1667,7 @@ Int16 parse_makefile(Char *makef, Boolean parse_makef)
   {
     if (parse_makef)
     {
-      log_error(CANT_OPEN_MAKEFILE, makef, MSG_NO_LINE_NO);
-      exit(TMK_EXIT_FAILURE);
+      log_error_and_exit(CANT_OPEN_MAKEFILE, makef, MSG_NO_LINE_NO);
     }
     else
     {
@@ -1739,8 +1723,7 @@ Int16 parse_makefile(Char *makef, Boolean parse_makef)
     case OP_COMMAND:
       if (cur_wrk.t1 == NULL)
       {
-        log_error(INV_RULE_CMD_ONLY, NULL, line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(INV_RULE_CMD_ONLY, NULL, line);
       }
       cmd_add_tail(&cur_wrk.cmd, sp, line);
       break;
@@ -1762,8 +1745,7 @@ Int16 parse_makefile(Char *makef, Boolean parse_makef)
 
       if (strlen(sp))
       {
-        log_error(INV_INF_RULE, NULL, line);
-        exit(TMK_EXIT_FAILURE);
+        log_error_and_exit(INV_INF_RULE, NULL, line);
       }
 
       cur_wrk.t1 = (Char *)alloc_buf(strlen(lp) + 1,
@@ -1776,8 +1758,7 @@ Int16 parse_makefile(Char *makef, Boolean parse_makef)
 
       break;
     default:
-      log_error(INV_RULE, NULL, line);
-      exit(TMK_EXIT_FAILURE);
+      log_error_and_exit(INV_RULE, NULL, line);
     }
   }
   register_rules();
