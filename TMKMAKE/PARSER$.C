@@ -686,46 +686,55 @@ Static
   return (TRUE);
 }
 
-/* ================================================================= */
-/*  Function:    read_source ()                                      */
-/* ================================================================= */
-
+// =================================================================
+//  Function:    read_source ()
+//
+//  Выполняет чтение из мейкфайла очередной одной строки, помещая
+//  ее в буфер ibuf1. Прочитанная строка нуль терминируется сразу
+//  после последнего печатного символа.
+//  Возвращает указатель на начало прочитанной строки в ibuf1.
+// =================================================================
 Static
-    Char *
-    read_source(Incl_t *mf, Int32 *read_cnt)
+Char*
+read_source(Incl_t *mf, Int32 *read_cnt)
 {
   _RIOFB_T *iofb;
   Char *rp;
   Int32 cnt;
 
-#ifdef SRVOPT
+  #ifdef SRVOPT
   if (srvopt_function())
     printf("FCT:read_source( \"%s\")\n", mf->name);
-#endif
+  #endif
+
   iofb = _Rreadn(mf->f, ibuf1, mf->rec_len, __DFT);
   if (iofb->num_bytes == EOF)
   {
     mf->eof = TRUE;
-#ifdef SRVOPT
+
+    #ifdef SRVOPT
     if (srvopt_fctrtn())
       printf("RTN:read_source:NULL\n");
-#endif
+    #endif
+
     return (NULL);
   }
-#ifdef SRVOPT
+
+  #ifdef SRVOPT
   if (srvopt_detail())
     printf("DTL:read_source:"
            "iofb->num_bytes=%d left/right=%d/%d\n",
            iofb->num_bytes, mf->left_margin, mf->right_margin);
-#endif
+  #endif
+
   if (iofb->num_bytes != mf->rec_len)
   {
   }
 
-  /* calculate the return buffer pointer and get rid of all     */
-  /*  trailing blanks in the buffer, null terminated            */
-  rp = ibuf1 +
-       ((mf->rec_len > mf->right_margin) ? mf->right_margin : mf->rec_len);
+  // calculate the return buffer pointer and get rid of all
+  //  trailing blanks in the buffer, null terminated
+  rp = ibuf1 + ((mf->rec_len > mf->right_margin) ?
+                mf->right_margin : mf->rec_len);
   cnt = mf->rec_len - mf->left_margin;
   while (cnt && isspace(*rp))
   {
@@ -735,13 +744,14 @@ Static
   *(rp + 1) = '\0';
   *read_cnt = cnt;
 
-#ifdef SRVOPT
+  #ifdef SRVOPT
   if (srvopt_fctrtn())
     printf("RTN:read_source:\"%s\"\n", ibuf1 + mf->left_margin);
-#endif
+  #endif
 
   return (ibuf1 + mf->left_margin);
 }
+
 
 /* ================================================================= */
 /*  Function:    register_rules ()                                   */
@@ -830,47 +840,46 @@ Static
   }
 }
 
+
 /* ================================================================= */
 /*  Function:    append_rd_buf ()                                    */
 /* ================================================================= */
-
 Static
-    Int32
-    append_rd_buf(Int16 append_cnt, Char *from_buf,
-                  Int16 *to_buf_sz, Char **to_buf)
+Int32
+append_rd_buf(Int16 append_cnt, Char *from_buf,
+              Int16 *to_buf_sz, Char **to_buf)
 {
-  Char *lp;
-  Int16 sz;
-  Int32 total_sz;
-
-#ifdef SRVOPT
+  #ifdef SRVOPT
   if (srvopt_function())
-    printf("FCT:append_rd_buf(%d,\"%s\",,)\n", append_cnt,
-           from_buf);
-#endif
-  sz = (*to_buf == NULL) ? 0 : strlen(*to_buf);
-  total_sz = sz + append_cnt + 1;
+    printf("FCT:append_rd_buf(%d,\"%s\",,)\n", append_cnt, from_buf);
+  #endif
+
+  Int16 sz       = (*to_buf == NULL) ? 0 : strlen(*to_buf);
+  Int32 total_sz = sz + append_cnt + 1;
+  Char* lp;
+
   if (total_sz >= *to_buf_sz)
   {
     lp = *to_buf;
-    *to_buf_sz = ((total_sz / WRKBUF_SZ) * WRKBUF_SZ) +
-                 WRKBUF_SZ;
+    *to_buf_sz = ((total_sz / WRKBUF_SZ) * WRKBUF_SZ) + WRKBUF_SZ;
     *to_buf = (Char *)alloc_buf(*to_buf_sz, "append_rd_buf()");
     memcpy(*to_buf, lp, sz);
     if (lp != NULL)
-    {
       free(lp);
-    }
   }
+
   memcpy((*to_buf) + sz, from_buf, append_cnt);
   *((*to_buf) + sz + append_cnt) = 0;
-#ifdef SRVOPT
+
+  #ifdef SRVOPT
   if (srvopt_fctrtn())
     printf("RTN:append_rd_buf:%d,%d,\"%s\"\n", sz + append_cnt,
            *to_buf_sz, *to_buf);
-#endif
+  #endif
+
   return (sz + append_cnt);
 }
+
 
 /* ================================================================= */
 /*  Function:    include_keyword_found ()                            */
@@ -900,165 +909,176 @@ Static
   return (ep);
 }
 
-/* ================================================================= */
-/*  Function:    read_next_line ()                                   */
-/* ================================================================= */
-/***********************************************************************
-        Read in a line from description file.
-        Get rid of comments and blank lines.
-        Perform first level macro text substitution.
-        all nested include directive becomes transparent via
-             read_next_line().
 
-        return NULL if no more line can be read from input stream.
-Limitation:
-        Max record length of description file is WRKBUF_SZ
-Check
-***********************************************************************/
+// =================================================================
+// Function:     line_is_comment(const Char* line)
+//
+// Проверяет, является ли переданная нуль-терминированная строка
+// комментарием в мейкфайле
+// =================================================================
+Boolean line_is_comment(const Char* line)
+{
+  while (*line && isspace(*line))
+    ++line;
+
+  return *line == '#';
+}
+
+
+// =================================================================
+//  Function:    read_next_line ()
+// =================================================================
+//      Read in a line from description file.
+//      Get rid of comments and blank lines.
+//      Perform first level macro text substitution.
+//      all nested include directive becomes transparent via
+//      read_next_line().
+//
+//      return NULL if no more line can be read from input stream.
+//
+//      Limitation:
+//      Max record length of description file is WRKBUF_SZ
 
 Static
-    Char *
-    read_next_line(Int16 *line)
+Char*
+read_next_line(Int16 *line)
 {
   Boolean cont_line;
   Boolean read_more;
   Int32 read_cnt;
   Int32 tot_cnt;
-  Char *hp; /* buffer head pointer          */
-  Char *tp; /* buffer tail pointer          */
+  Char *hp; // buffer head pointer
+  Char *tp; // buffer tail pointer
   Char *fn;
   Char *rtn_txt;
 
-#ifdef SRVOPT
+  #ifdef SRVOPT
   if (srvopt_function())
     printf("FCT:read_next_line(Int16 *line)\n");
-#endif
+  #endif
 
   ibuf2[0] = 0;
 
-try_again:
+  try_again:
   read_more = TRUE;
   cont_line = FALSE;
-  tot_cnt = 0;
-  cur_line = rd_line + 1;
+  tot_cnt   = 0;
+  cur_line  = rd_line + 1;
 
-  /* loop and read ONE line or lines concatenated by            */
-  /* continuation characters.                                   */
+  // loop and read ONE line or lines concatenated by continuation characters
   while (read_more)
   {
+    hp = read_source(mf, &read_cnt);
+    if (hp == NULL)
+      break;
+
     read_more = FALSE;
-    if ((hp = read_source(mf, &read_cnt)) != NULL)
+    ++rd_line;
+    tp = hp + read_cnt - 1;
+
+    // get rid of blank line
+    if (read_cnt == 0)
     {
-      ++rd_line;
-      tp = hp + read_cnt - 1;
+      if (ibuf2[0] == 0)
+      {
+        // bump up line count if no text read before
+        // and read next line of text
+        // i.e. skipping continuous blank lines
+        ++cur_line;
+        read_more = TRUE;
+        continue;
+      }
+      else
+        // blank line follows an text line with continuation
+        break;
+    }
 
-      /* get rid of blank line                              */
+    if (cont_line)
+      // get rid of any lead white spaces
+      while (*hp && isspace(*hp))
+      {
+        --read_cnt;
+        ++hp;
+      }
+
+    // check if the current line contains continuation characters
+    if (*tp == '\\' || *tp == '+')
+    {
+      cont_line = read_more = TRUE;
+
+      // replace '\' or '+' with ' ' and
+      // get rid of all trailing blanks
+      *tp = ' ';
+      read_cnt = skip_trail_spaces(hp);
+
+      // ignore blank line
       if (read_cnt == 0)
-      {
-        if (ibuf2[0] == 0)
-        {
-          /* bump up line count if no text read before  */
-          /* and read next line of text                 */
-          /* i.e. skipping continuous blank lines       */
-          ++cur_line;
-          read_more = TRUE;
-          continue;
-        }
-        else
-        {
-          /* blank line follows an text line with       */
-          /* continuation                               */
-          break;
-        }
-      }
+        continue;
 
-      if (cont_line)
-      {
-        /* get rid of any lead white spaces              */
-        while (*hp && isspace(*hp))
-        {
-          --read_cnt;
-          ++hp;
-        }
-      }
+      // just make sure there is at least 1 trailing
+      // blank replacing the '\'
+      tp = hp + read_cnt;
+      *tp++ = ' ';
+      *tp = 0;
+      ++read_cnt;
+    }
 
-      /* check if the current line contains continuation    */
-      /*  characters                                        */
-      if (*tp == '\\' || *tp == '+')
-      {
-        cont_line =
-            read_more = TRUE;
+    tot_cnt = append_rd_buf(read_cnt, hp, &ibuf2_sz, &ibuf2);
+  } // while (read_more)
 
-        /* replace '\' with ' '                           */
-        *tp = ' ';
 
-        /* get rid of all trailing blanks                 */
-        read_cnt = skip_trail_spaces(hp);
-
-        /* ignore blank line                              */
-        if (read_cnt == 0)
-          continue;
-
-        /* just make sure there is at least 1 trailing    */
-        /* blank replacing the '\'                        */
-        tp = hp + read_cnt;
-        *tp++ = ' ';
-        *tp = 0;
-        ++read_cnt;
-      }
-      tot_cnt = append_rd_buf(read_cnt, hp,
-                              &ibuf2_sz, &ibuf2);
-    } /* if( ( hp = read_source( mf, &read_cnt ) )... */
-  }   /* while( read_more ) { */
-
-  /* check if line starts with '#' - comment line - ignored     */
-  if (*ibuf2 == '#')
+  // check if line starts with '#' - comment line - ignored
+  if (line_is_comment(ibuf2))
   {
     *ibuf2 = 0;
     rtn_txt = ibuf2;
   }
   else
   {
-    /* look for and get rid of comments in the middle of text */
-    tp = ibuf2 + tot_cnt;
-    while (tot_cnt-- > 0)
+    Char* src = ibuf2;
+    Char* dst = ibuf2;
+
+    while (dst++, *(src++))
     {
-      if (*(--tp) == '#')
-      {
-        *tp = 0;
-      }
+      if (*src == '#')
+        if (*(src - 1) == '\\')
+          --dst;
+        else
+        {
+          *dst = 0;
+          break;
+        }
+
+      *dst = *src;
     }
 
-    /* get rid of all trailing blanks again                   */
+
+    // get rid of all trailing blanks again
     skip_trail_spaces(ibuf2);
 
-    /* expand all macro in the current text line              */
+    // expand all macro in the current text line
     rtn_txt = text_substitution(ibuf2, cur_line);
 
-    /* process include directive only if !include or include  */
-    /* keyword is found and also conditional directive must   */
-    /* be currently active i.e. !if 0 / !include.. / !endif   */
-    /* exclude the !include processing                        */
-    if (cd->active &&
-        (fn = include_keyword_found(rtn_txt)) != NULL)
+    // process include directive only if !include or include
+    // keyword is found and also conditional directive must
+    // be currently active i.e. !if 0 / !include.. / !endif
+    // exclude the !include processing
+    if (cd->active && (fn = include_keyword_found(rtn_txt)) != NULL)
     {
-      /* start nested include process                       */
+      // start nested include process
       Char *tp = fn;
 
       if (++cur_mf_lvl >= max_mf_lvl)
-      {
-        /* over max nested include level - error          */
+        // over max nested include level - error
         log_error_and_exit(NEST_INCL_EXCEED_MAX, NULL, cur_line);
-      }
 
       tp = skip_non_white_spaces(tp);
       *tp = 0;
 
-      /* convert lib/member.file file spec. to              */
-      /* lib/file(member) which _Ropen understands. If the  */
-      /* include file name does not include a '.' character,*/
-      /* the filename text from the input is used for the   */
-      /* _Ropen().                                          */
+      // convert lib/member.file file spec. to
+      // lib/file(member) which _Ropen understands. If the
+      // include file name does not include a '.' character,
+      // the filename text from the input is used for the _Ropen()
       if ((tp = strchr(fn, '.')) != NULL)
       {
         Char *slashp = strchr(fn, '/');
@@ -1068,13 +1088,11 @@ try_again:
         if (slashp != NULL)
         {
           *slashp = 0;
-          sprintf(t1.bp, "%s/%s(%s)", fn,
-                  tp + 1, slashp + 1);
+          sprintf(t1.bp, "%s/%s(%s)", fn, tp + 1, slashp + 1);
         }
         else
-        {
           sprintf(t1.tp, "%s(%s)", tp + 1, fn);
-        }
+
         fn = t1.bp;
       }
 
@@ -1088,7 +1106,7 @@ try_again:
       mf->line_no = rd_line;
       ++mf;
       mf->name = fn;
-      /* open include file for makefile script text read    */
+      // open include file for makefile script text read
       if (open_source_file(mf))
       {
         rd_line = 0;
@@ -1096,13 +1114,12 @@ try_again:
         goto try_again;
       }
       else
-      {
         log_error_and_exit(CANT_OPEN_INCLUDE, fn, cur_line);
-      }
-    } /* if( cd->active && ...include processing */
-  }   /* if( *ibuf2 == '#' ) else */
+    } // if (cd->active && ...include processing
+  } // if (*ibuf2 == '#') else
 
-  /* ignore blank line and recover from nested include          */
+
+  // ignore blank line and recover from nested include
   if (*rtn_txt == 0)
   {
     if (!mf->eof)
@@ -1117,21 +1134,22 @@ try_again:
       ibuf2[0] = 0;
       goto try_again;
     }
-  } /* if( *rtn_txt == 0 ) { */
+  }
 
   *line = cur_line;
 
-#ifdef SRVOPT
+  #ifdef SRVOPT
   if (srvopt_fctrtn())
     printf("RTN:read_next_line:\"%s\"\n", rtn_txt);
-#endif
+  #endif
+
   return (rtn_txt);
 }
+
 
 /* ================================================================= */
 /*  Function:    look_for+directive ()                               */
 /* ================================================================= */
-
 Static
     Int16
     look_for_directive(Char *rd_ln, Int16 sz)

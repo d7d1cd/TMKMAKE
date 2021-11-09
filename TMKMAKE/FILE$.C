@@ -31,67 +31,60 @@
 #include "option"
 #include "msghandle"
 
-/***********************************************************************
-        Variables definitions
-***********************************************************************/
 
-/* ================================================================= */
-/*  Function:    valid_name ()                                       */
-/* ================================================================= */
-
+// =================================================================
+//  Function:    valid_name ()
+// =================================================================
 Static
-    Char *
-    valid_name(Char *txt, Int16 *sz)
+Char*
+valid_name(Char* txt, Int16* sz)
 {
   Char *tp = txt;
   Char *rp;
   Int16 len = 0;
 
-#ifdef SRVOPT
+  #ifdef SRVOPT
   if (srvopt_function())
     printf("FCT:valid_name(\"%s\",Int16 *sz)\n", txt);
-#endif
-  /* first character must be A-Z, a-z, $ and @. The * character */
-  /* is valid for such things as *LIBL, *CURLIB or *FIRST.      */
-  if (*tp == 0 || !(isalpha(*tp) || look_for("$@*", *tp)))
-  {
-    rp = NULL;
-  }
-  else
-  {
-    ++tp; /* skip the first character          */
+  #endif
 
-    /* following characters must be A-Z, a-z, 0-9, _, $ and @.*/
-    /*  accomodate $$(@) -> () are valid character in name    */
-    while (*tp)
+  // first character must be A-Z, a-z, $, @, #. The * character
+  // is valid for such things as *LIBL, *CURLIB or *FIRST.
+  if (*tp == 0 || !(isalpha(*tp) || look_for("$@#*", *tp)))
+  {
+    *sz = 0;
+    return NULL;
+  }
+
+  // following characters must be A-Z, a-z, 0-9, _, $, @ and #.
+  // accomodate $$(@) -> () are valid character in name
+  while (*(++tp))
+    if (!(isalnum(*tp) || look_for("$@_#", *tp)))
     {
-      if (!(isalnum(*tp) || look_for("$@_", *tp)))
-      {
-        Char *mp = has_dyn_macro(tp - 1);
+      Char *mp = has_dyn_macro(tp - 1);
 
-        /* has_dyn_macro find macro anywhere in string    */
-        /* make sure it is found at the beginning         */
-        if (mp == NULL || mp != (tp - 1))
-        {
-          break;
-        }
-        /* dynamic macro found, adjust pointer            */
-        tp += (*tp == '@') ? 0 : 3;
-      }
-      ++tp;
+      // has_dyn_macro find macro anywhere in string
+      // make sure it is found at the beginning
+      if (mp == NULL || mp != (tp - 1))
+        break;
+
+      // dynamic macro found, adjust pointer
+      tp += (*tp == '@') ? 0 : 3;
     }
-    /* also ensure 10 chars max for valid object name         */
-    len = tp - txt;
-    rp = (len == 0 || len > 10) ? NULL : tp;
-  }
+
+  // also ensure 10 chars max for valid object name
+  len = tp - txt;
+  rp  = (len == 0 || len > 10) ? NULL : tp;
   *sz = len;
 
-#ifdef SRVOPT
+  #ifdef SRVOPT
   if (srvopt_fctrtn())
     printf("RTN:valid_name:\"%s\",%d\n", rp ? rp : "NULL", len);
-#endif
+  #endif
+
   return (rp);
 }
+
 
 /* ================================================================= */
 /*  Function:    namecpy ()                                          */
@@ -1197,24 +1190,27 @@ Boolean obj_exists(File_spec_t *fs, Int16 line)
 /* ================================================================= */
 /*  Function:    skip_obj_name ()                                    */
 /* ================================================================= */
-
 Char *skip_obj_name(Char *txt)
 {
-#ifdef SRVOPT
+  #ifdef SRVOPT
   if (srvopt_function())
     printf("FCT:skip_obj_name(\"%s\")\n", txt);
-#endif
+  #endif
+
   while (*txt && (isalnum(*txt) ||
-                  look_for("./(),*<>_$@", *txt) != NULL))
+                  look_for("./(),*<>_$@#", *txt) != NULL))
   {
     ++txt;
   }
-#ifdef SRVOPT
+
+  #ifdef SRVOPT
   if (srvopt_fctrtn())
     printf("RTN:skip_obj_name:\"%s\"\n", txt);
-#endif
+  #endif
+
   return (txt);
 }
+
 
 /* ================================================================= */
 /*  Function:    touch_target ()                                     */
