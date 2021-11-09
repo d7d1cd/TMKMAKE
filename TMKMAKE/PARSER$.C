@@ -688,6 +688,11 @@ Static
 
 // =================================================================
 //  Function:    read_source ()
+//
+//  Выполняет чтение из мейкфайла очередной одной строки, помещая
+//  ее в буфер ibuf1. Прочитанная строка нуль терминируется сразу
+//  после последнего печатного символа.
+//  Возвращает указатель на начало прочитанной строки в ibuf1.
 // =================================================================
 Static
 Char*
@@ -906,6 +911,21 @@ Static
 
 
 // =================================================================
+// Function:     line_is_comment(const Char* line)
+//
+// Проверяет, является ли переданная нуль-терминированная строка
+// комментарием в мейкфайле
+// =================================================================
+Boolean line_is_comment(const Char* line)
+{
+  while (*line && isspace(*line))
+    ++line;
+
+  return *line == '#';
+}
+
+
+// =================================================================
 //  Function:    read_next_line ()
 // =================================================================
 //      Read in a line from description file.
@@ -986,10 +1006,9 @@ read_next_line(Int16 *line)
     {
       cont_line = read_more = TRUE;
 
-      // replace '\' or '+' with ' '
-      *tp = ' ';
-
+      // replace '\' or '+' with ' ' and
       // get rid of all trailing blanks
+      *tp = ' ';
       read_cnt = skip_trail_spaces(hp);
 
       // ignore blank line
@@ -1009,81 +1028,95 @@ read_next_line(Int16 *line)
 
 
   // check if line starts with '#' - comment line - ignored
-  if (*ibuf2 == '#')
+  if (line_is_comment(ibuf2))
   {
     *ibuf2 = 0;
     rtn_txt = ibuf2;
   }
-
-  // look for and get rid of comments in the middle of text
-  tp = ibuf2 + tot_cnt;
-  while (tot_cnt-- > 0)
-    if (*(--tp) == '#')
-      *tp = 0;
-
-  // get rid of all trailing blanks again
-  skip_trail_spaces(ibuf2);
-
-  // expand all macro in the current text line
-  rtn_txt = text_substitution(ibuf2, cur_line);
-
-  // process include directive only if !include or include
-  // keyword is found and also conditional directive must
-  // be currently active i.e. !if 0 / !include.. / !endif
-  // exclude the !include processing
-  if (cd->active && (fn = include_keyword_found(rtn_txt)) != NULL)
+  else
   {
-    // start nested include process
-    Char *tp = fn;
+    Char* src = ibuf2;
+    Char* dst = ibuf2;
 
-    if (++cur_mf_lvl >= max_mf_lvl)
-      // over max nested include level - error
-      log_error_and_exit(NEST_INCL_EXCEED_MAX, NULL, cur_line);
-
-    tp = skip_non_white_spaces(tp);
-    *tp = 0;
-
-    // convert lib/member.file file spec. to
-    // lib/file(member) which _Ropen understands. If the
-    // include file name does not include a '.' character,
-    // the filename text from the input is used for the _Ropen()
-    if ((tp = strchr(fn, '.')) != NULL)
+    while (dst++, *(src++))
     {
-      Char *slashp = strchr(fn, '/');
+      if (*src == '#')
+        if (*(src - 1) == '\\')
+          --dst;
+        else
+        {
+          *dst = 0;
+          break;
+        }
 
+      *dst = *src;
+    }
+
+
+    // get rid of all trailing blanks again
+    skip_trail_spaces(ibuf2);
+
+    // expand all macro in the current text line
+    rtn_txt = text_substitution(ibuf2, cur_line);
+
+    // process include directive only if !include or include
+    // keyword is found and also conditional directive must
+    // be currently active i.e. !if 0 / !include.. / !endif
+    // exclude the !include processing
+    if (cd->active && (fn = include_keyword_found(rtn_txt)) != NULL)
+    {
+      // start nested include process
+      Char *tp = fn;
+
+      if (++cur_mf_lvl >= max_mf_lvl)
+        // over max nested include level - error
+        log_error_and_exit(NEST_INCL_EXCEED_MAX, NULL, cur_line);
+
+      tp = skip_non_white_spaces(tp);
       *tp = 0;
-      reset_buf(&t1);
-      if (slashp != NULL)
+
+      // convert lib/member.file file spec. to
+      // lib/file(member) which _Ropen understands. If the
+      // include file name does not include a '.' character,
+      // the filename text from the input is used for the _Ropen()
+      if ((tp = strchr(fn, '.')) != NULL)
       {
-        *slashp = 0;
-        sprintf(t1.bp, "%s/%s(%s)", fn, tp + 1, slashp + 1);
+        Char *slashp = strchr(fn, '/');
+
+        *tp = 0;
+        reset_buf(&t1);
+        if (slashp != NULL)
+        {
+          *slashp = 0;
+          sprintf(t1.bp, "%s/%s(%s)", fn, tp + 1, slashp + 1);
+        }
+        else
+          sprintf(t1.tp, "%s(%s)", tp + 1, fn);
+
+        fn = t1.bp;
+      }
+
+      if (opt_debug())
+      {
+        sprintf(txtbuf, "Include file opened (%d) = \"%s\"",
+                cur_mf_lvl, fn);
+        log_dbg(txtbuf);
+      }
+
+      mf->line_no = rd_line;
+      ++mf;
+      mf->name = fn;
+      // open include file for makefile script text read
+      if (open_source_file(mf))
+      {
+        rd_line = 0;
+        ibuf2[0] = 0;
+        goto try_again;
       }
       else
-        sprintf(t1.tp, "%s(%s)", tp + 1, fn);
-
-      fn = t1.bp;
-    }
-
-    if (opt_debug())
-    {
-      sprintf(txtbuf, "Include file opened (%d) = \"%s\"",
-              cur_mf_lvl, fn);
-      log_dbg(txtbuf);
-    }
-
-    mf->line_no = rd_line;
-    ++mf;
-    mf->name = fn;
-    // open include file for makefile script text read
-    if (open_source_file(mf))
-    {
-      rd_line = 0;
-      ibuf2[0] = 0;
-      goto try_again;
-    }
-    else
-      log_error_and_exit(CANT_OPEN_INCLUDE, fn, cur_line);
-  } // if (cd->active && ...include processing
+        log_error_and_exit(CANT_OPEN_INCLUDE, fn, cur_line);
+    } // if (cd->active && ...include processing
+  } // if (*ibuf2 == '#') else
 
 
   // ignore blank line and recover from nested include
