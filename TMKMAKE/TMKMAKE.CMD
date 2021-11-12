@@ -76,7 +76,8 @@
  /*                                             */
  /*  OPTIONS - OPTION(OPTIONS)                  */
  /*                                             */
- /*                                             */
+ /*  Unused symbols:                            */
+ /*  A         KLMNOPQR    W                    */
          PARM       KWD(OPTION)                                   +
                       TYPE(*CHAR)                                 +
                       LEN(1)                                      +
@@ -95,6 +96,8 @@
                              (*DEBUG          D)                  +
                              (*NOEXCEPT       Y)                  +
                              (*EXCEPT         Z)                  +
+                             (*NOEVENTF       H)                  +
+                             (*EVENTF         G)                  +
                             )                                     +
                       PROMPT(TMK0007)                             +
                       CHOICE(*NONE)                               +
@@ -154,6 +157,7 @@
                              (*ALL           A)                   +
                             )                                     +
                       MIN(0) MAX(9)                               +
+                      CHOICE(*NONE)                               +
                       PROMPT('Internal service options')
 
  /*                                             */

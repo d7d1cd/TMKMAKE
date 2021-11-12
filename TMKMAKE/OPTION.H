@@ -32,27 +32,29 @@
 #define ARGV_SRVOPT 9 /* this must be last */
 #endif
 
-/*      options variable valid value bit definitions                 */
-/*      zero value is always the default option for each bit         */
-#define OPT_NOIGNORE 0x0000  /* don't ignore err code*/
-#define OPT_IGNORE 0x0001    /* ignore error code    */
-#define OPT_NOSILENT 0x0000  /* No silent mode       */
-#define OPT_SILENT 0x0002    /* silent mode          */
-#define OPT_BIRULES 0x0000   /* use built-in rule    */
-#define OPT_NOBIRULES 0x0004 /* use no built-in rule */
-#define OPT_EXEC 0x0000      /* execute mode         */
-#define OPT_NOEXEC 0x0008    /* no execute mode      */
-#define OPT_NOTOUCH 0x0000   /* don't touch targets  */
-#define OPT_TOUCH 0x0010     /* touch target files   */
-#define OPT_NODEBUG 0x0000   /* NO debug information */
-#define OPT_DEBUG 0x0020     /* debug information    */
-#define OPT_NOEXCEPT 0x0000  /* NO raise exception   */
-#define OPT_EXCEPT 0x0040    /* raise exception      */
+//      options variable valid value bit definitions
+//      zero value is always the default option for each bit
+#define OPT_NOIGNORE  0x0000   // don't ignore err code
+#define OPT_IGNORE    0x0001   // ignore error code
+#define OPT_NOSILENT  0x0000   // No silent mode
+#define OPT_SILENT    0x0002   // silent mode
+#define OPT_BIRULES   0x0000   // use built-in rule
+#define OPT_NOBIRULES 0x0004   // use no built-in rule
+#define OPT_EXEC      0x0000   // execute mode
+#define OPT_NOEXEC    0x0008   // no execute mode
+#define OPT_NOTOUCH   0x0000   // don't touch targets
+#define OPT_TOUCH     0x0010   // touch target files
+#define OPT_NODEBUG   0x0000   // NO debug information
+#define OPT_DEBUG     0x0020   // debug information
+#define OPT_NOEXCEPT  0x0000   // NO raise exception
+#define OPT_EXCEPT    0x0040   // raise exception
+#define OPT_NOEVENTF  0x0000   // NO create event file
+#define OPT_EVENTF    0x0080   // create event file
 
-#define OPT_DEFAULT OPT_NOIGNORE  | OPT_NOSILENT |  \
+#define OPT_DEFAULT  OPT_NOIGNORE | OPT_NOSILENT |  \
                      OPT_BIRULES  | OPT_EXEC     |  \
                      OPT_NOTOUCH  | OPT_NODEBUG  |  \
-                     OPT_NOEXCEPT
+                     OPT_NOEXCEPT | OPT_NOEVENTF
 
 /*      AS/400 MAKE return code handling definitions                 */
 #define RTN_EXCEPTION 0x01 /* exception handling   */
@@ -137,5 +139,6 @@ Boolean opt_no_execute(Void);
 Boolean opt_touch_target(Void);
 Boolean opt_debug(Void);
 Boolean opt_except(Void);
+Boolean opt_eventf(Void);
 
 #endif /* _TMKHOPTI_H */
