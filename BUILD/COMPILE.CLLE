@@ -483,6 +483,14 @@ PGM PARM(&@SRCLIB &@DSTLIB)
                      syntax and try again.')
 
 
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 1000)) MSGID(TMK9048) +
+             MSG('Wrong number of parameters') +
+             SECLVL('&N Cause . . . . . :   Incorrect number of parameters passed to the program. +
+                     &N Recovery  . . . :   Run the program using the TMKMAKE command.')
+
+
 
 
   /* КОМПИЛЯЦИЯ МОДУЛЕЙ *******************************************************/

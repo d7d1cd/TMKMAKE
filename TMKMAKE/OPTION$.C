@@ -325,7 +325,7 @@ Void setup_command_macro(Void)
 // =================================================================
 //  Function:    process_options ()
 // =================================================================
-Void process_options(Char** argv)
+Void process_options(int argc, Char** argv)
 {
   int txtsz; // int to match printf("%*") type
   Void (*old_signal_fct)(int);
@@ -335,7 +335,15 @@ Void process_options(Char** argv)
   set_srvopt(argv[ARGV_SRVOPT]);
   if (srvopt_function())
     printf("FCT:process_options(%d,Char *argv)\n", argc);
+
+  assert(0);
+  // Если будет использован макрос SRVOPT, то необходимо
+  // сделать правильную обработку числа параметров в коде ниже
   #endif
+
+  // check parms count
+  if (argc != 10)
+    log_error_and_exit(WRONG_PARMS, NULL, MSG_NO_LINE_NO);
 
   // process options
   Int16 cnt = *(Int16*)argv[ARGV_OPTIONS];
@@ -421,7 +429,7 @@ Void process_options(Char** argv)
   memcpy(makefile_name, cp, txtsz);
   cp = makefile_name + txtsz;
   *cp++ = '/';
-  txtsz = skip_trail_spaces_sz(argv[2], CMDF_LIBFILE / 2);
+  txtsz = skip_trail_spaces_sz(argv[ARGV_SRCFILE], CMDF_LIBFILE / 2);
   memcpy(cp, argv[ARGV_SRCFILE], txtsz);
   cp += txtsz;
   *cp = 0;
