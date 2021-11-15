@@ -1,0 +1,13 @@
+lib = CSNTST
+var = \#
+
+all\#:
+   @echo without +
+         \#begin +
+         end\#   +
+         mid\#dle +
+         $(var)
+
+$(lib)/\#cte\#st<MODULE>: $(lib)/\#cte\#st.SOURCE<FILE>
+    CRTCMOD MODULE($(lib)/\#cte\#st) SRCFILE($(lib)/SOURCE) SRCMBR(\#cte\#st)
+ 
