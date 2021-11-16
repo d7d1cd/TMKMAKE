@@ -27,6 +27,7 @@
 #include "builtin"
 #include "sysapi"
 #include "msghandle"
+#include "eventf"
 
 /***********************************************************************
         Variable declarations
@@ -610,41 +611,34 @@ Void CPF4102_handler(int sig)
 #endif
 }
 
-/* ================================================================= */
-/*  Function:    open_source_file ()                                 */
-/* ================================================================= */
-
+// =================================================================
+//  Function:    open_source_file ()
+// =================================================================
 Static
-    Boolean
-    open_source_file(Incl_t *mf)
+Boolean
+open_source_file(Incl_t *mf)
 {
-#ifdef __ILEC400__
-  _XXOPFB_T *ofb;
-#else
-  XXOPFB_T *ofb;
-#endif
-  Int16 margin;
-
-#ifdef SRVOPT
+  #ifdef SRVOPT
   if (srvopt_function())
     printf("FCT:open_source_file( \"%s\"\n", mf->name);
-#endif
-  /* open source file using record I/O                          */
+  #endif
+
+  // open source file using record I/O
   signal(SIGIO, &CPF4102_handler);
   if ((mf->f = _Ropen(mf->name, "rr")) == NULL)
   {
-#ifdef SRVOPT
+    #ifdef SRVOPT
     if (srvopt_fctrtn())
       printf("RTN:open_source_file:FALSE\n");
-#endif
+    #endif
     return (FALSE);
   }
 
-  /* get open feedback information of the open source file      */
-  ofb = _Ropnfbk(mf->f);
-  mf->rec_len = ofb->pgm_record_len;
-  if ((margin = opt_get_left_margin()) == 0 ||
-      !memcmp(strchr(mf->name, '('), "(BUILTIN)", 9))
+  // get open feedback information of the open source file
+  const _XXOPFB_T* ofb = _Ropnfbk(mf->f);
+  mf->rec_len  = ofb->pgm_record_len;
+  Int16 margin = opt_get_left_margin();
+  if (margin == 0 || !memcmp(strchr(mf->name, '('), "(BUILTIN)", 9))
   {
     mf->left_margin = ofb->src_file_indic == 'Y' ? 12 : 0;
     mf->right_margin = ofb->pgm_record_len - 1;
@@ -655,15 +649,20 @@ Static
     mf->right_margin = opt_get_right_margin() - 1;
   }
 
-  /* make sure the input buffer is big enough for next read     */
+  // make sure the input buffer is big enough for next read
   if ((mf->rec_len + 1) > ibuf1_sz)
   {
     ibuf1_sz = (mf->rec_len / WRKBUF_SZ) * WRKBUF_SZ + WRKBUF_SZ;
     free(ibuf1);
     ibuf1 = (Char *)alloc_buf(ibuf1_sz, "open_source()");
   }
+
   mf->eof = FALSE;
-#ifdef SRVOPT
+
+  // Determining the name of the library to host the EVFEVENT file
+  eventf_set_dstlib(ofb);
+
+  #ifdef SRVOPT
   if (srvopt_detail())
   {
     printf("DTL:open_source_file:left/right margin = %d/%d\n",
@@ -677,14 +676,14 @@ Static
            ofb->pgm_record_len, ofb->pgm_record_len,
            ofb->max_rcd_length, ofb->max_rcd_length);
   }
-#endif
 
-#ifdef SRVOPT
   if (srvopt_fctrtn())
     printf("RTN:open_source_file:TRUE\n");
-#endif
+  #endif
+
   return (TRUE);
 }
+
 
 // =================================================================
 //  Function:    read_source ()
