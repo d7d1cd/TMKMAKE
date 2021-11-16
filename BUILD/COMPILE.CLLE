@@ -43,6 +43,8 @@ PGM PARM(&@SRCLIB &@DSTLIB)
   MONMSG     MSGID(CPF0000)
   DLTMSGF    MSGF(&DSTLIB/TMKMSGF)
   MONMSG     MSGID(CPF0000)
+  DLTF       FILE(&DSTLIB/DEBUG)
+  MONMSG     MSGID(CPF0000)
   DLTF       FILE(&DSTLIB/QMAKSRC)
   MONMSG     MSGID(CPF0000)
 
@@ -54,20 +56,20 @@ PGM PARM(&@SRCLIB &@DSTLIB)
   SNDPGMMSG  MSG('BEGIN MONITORING') KEYVAR(&LOWKEY)
 
   CRTSRCPF   FILE(&DSTLIB/QMAKSRC) RCDLEN(240) TEXT('Make tool built-in')
-  MONMSG     MSGID(CPF0000) EXEC(GOTO BADFILE)
+  MONMSG     MSGID(CPF0000) EXEC(GOTO BADBUILTIN)
 
   CPYSRCF    FROMFILE(&SRCLIB/TMKMAKE) FROMMBR(BUILTINMF) +
              TOFILE(&DSTLIB/QMAKSRC) TOMBR(BUILTIN)
-  MONMSG     MSGID(CPF0000) EXEC(GOTO BADFILE)
+  MONMSG     MSGID(CPF0000) EXEC(GOTO BADBUILTIN)
 
 
 
 
-  /* КОПИРОВАНИЕ ОТЛАДОЧНОГО МЕЙКФАЙЛА ****************************************/
+  /* КОПИРОВАНИЕ ОТЛАДОЧНОГО ФАЙЛА ********************************************/
   IF (&DBGMOD = *ALL) DO
-    CPYSRCF    FROMFILE(&SRCLIB/DEBUG) FROMMBR(MAKEFILE) +
-               TOFILE(&DSTLIB/QMAKSRC) TOMBR(*FROMMBR)
-    MONMSG     MSGID(CPF0000) EXEC(GOTO BADFILE)
+    CPYF       FROMFILE(&SRCLIB/DEBUG) TOFILE(&DSTLIB/DEBUG) +
+               FROMMBR(*ALL) TOMBR(*FROMMBR) CRTFILE(*YES)
+    MONMSG     MSGID(CPF0000) EXEC(GOTO BADBUILTIN)
   ENDDO
 
 
@@ -606,7 +608,7 @@ PGM PARM(&@SRCLIB &@DSTLIB)
              MSGDTA('Done successful!')
   GOTO       FINALLY
 
-  BADFILE:                                                                      /* Не удалось создать файл встроенных макросов */
+  BADBUILTIN:                                                                   /* Не удалось создать файл встроенных макросов */
   SNDPGMMSG  MSGID(CPA2401) MSGF(QCPFMSG) MSGTYPE(*DIAG) +
              MSGDTA('Built-in file create failed...')
   GOTO       FINALLY
