@@ -43,10 +43,13 @@ PGM PARM(&@SRCLIB &@DSTLIB)
   MONMSG     MSGID(CPF0000)
   DLTMSGF    MSGF(&DSTLIB/TMKMSGF)
   MONMSG     MSGID(CPF0000)
+  DLTF       FILE(&DSTLIB/CMDDEFS)
+  MONMSG     MSGID(CPF0000)
   DLTF       FILE(&DSTLIB/DEBUG)
   MONMSG     MSGID(CPF0000)
   DLTF       FILE(&DSTLIB/QMAKSRC)
   MONMSG     MSGID(CPF0000)
+
 
 
 
@@ -71,6 +74,22 @@ PGM PARM(&@SRCLIB &@DSTLIB)
                FROMMBR(*ALL) TOMBR(*FROMMBR) CRTFILE(*YES)
     MONMSG     MSGID(CPF0000) EXEC(GOTO BADBUILTIN)
   ENDDO
+
+
+
+
+  /* СОЗДАНИЕ И ЗАПОЛНЕНИЕ ФАЙЛА ОПИСАНИЯ КОМАНД ******************************/
+  CRTPF      FILE(&DSTLIB/CMDDEFS) SRCFILE(&SRCLIB/TMKMAKE) +
+             OPTION(*EVENTF *NOSRC *NOLIST) SIZE(*NOMAX) +
+             WAITFILE(*IMMED) LVLCHK(*NO)
+  MONMSG     MSGID(CPF0000) EXEC(GOTO BADCMDF)
+
+  SNDPGMMSG  MSG('BEGIN MONITORING') KEYVAR(&LOWKEY)
+  RUNSQL     SQL('insert into ' *CAT &DSTLIB *CAT '/CMDDEFS +
+                  (CMDNAME) values +
+                  (''CRTPGM'') ') +
+             COMMIT(*NONE)
+  MONMSG     MSGID(CPF0000) EXEC(GOTO BADCMDF)
 
 
 
@@ -611,6 +630,11 @@ PGM PARM(&@SRCLIB &@DSTLIB)
   BADBUILTIN:                                                                   /* Не удалось создать файл встроенных макросов */
   SNDPGMMSG  MSGID(CPA2401) MSGF(QCPFMSG) MSGTYPE(*DIAG) +
              MSGDTA('Built-in file create failed...')
+  GOTO       FINALLY
+
+  BADCMDF:                                                                      /* Не удалось создать файл с описанием команд */
+  SNDPGMMSG  MSGID(CPA2401) MSGF(QCPFMSG) MSGTYPE(*DIAG) +
+             MSGDTA('Command definition file create failed...')
   GOTO       FINALLY
 
   BADMSGF:                                                                      /* Не удалось создать файл сообщений */
