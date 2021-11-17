@@ -139,6 +139,5 @@ Boolean opt_no_execute(Void);
 Boolean opt_touch_target(Void);
 Boolean opt_debug(Void);
 Boolean opt_except(Void);
-Boolean opt_eventf(Void);
 
 #endif /* _TMKHOPTI_H */

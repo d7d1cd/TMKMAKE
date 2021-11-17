@@ -1,0 +1,4 @@
+all:
+   -dltf +
+                FILE(CSNTST/T\#)
+    CRTSRCPF FILE(CSNTST/T\#)

@@ -24,6 +24,7 @@
 #include "option"
 #include "msghandle"
 #include "sysapi"
+#include "eventf"
 
 #if 0
 #include "fdebug.h"
@@ -560,6 +561,9 @@ Void process_options(int argc, Char** argv)
   // process User Message Logging definitions
   if (argv[ARGV_USRMSG][0] == 'S')
     set_usrmsg_to_session();
+
+  // Setting the flag of the need to create an EVFEVENT file
+  eventf_set_flag_eventf(options & OPT_EVENTF);
 }
 
 
@@ -712,7 +716,3 @@ Boolean opt_except(void)
   return (options & OPT_EXCEPT);
 }
 
-Boolean opt_eventf(void)
-{
-  return (options & OPT_EVENTF);
-}

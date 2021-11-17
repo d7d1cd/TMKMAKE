@@ -31,6 +31,7 @@
 #include "option"
 #include "sysapi"
 #include "msghandle"
+#include "eventf"
 
 #ifdef __ILEC400__
 #define __rtvlurc() (_LU_WORK_AREA->LU_RC)
@@ -224,140 +225,39 @@ Static
   return (b->bp);
 }
 
-// =================================================================
-//  Function:    system_cmd_trap ()
-// =================================================================
-Static short system_cmd_sev;
-
-Static
-    Void
-    system_cmd_trap(int sig)
-{
-#ifdef __ILEC400__
-  _INTRPT_Hndlr_Parms_T excinfo; // exception data structure
-#else
-  sigdata_t *data; // pointer to exception data area
-  sigact_t *act;   // pointer to exception action area
-#endif
-
-  // Set ptr to sigdata structure
-#ifdef __ILEC400__
-  _GetExcData(&excinfo);
-#else
-  data = sigdata();
-#endif
-
-#ifdef __ILEC400__
-  system_cmd_sev = excinfo.Severity;
-#else
-  system_cmd_sev = data->exmsg->exmsgsev;
-#endif
-}
-
-//**********************************************************************
-// Note:   system specific routines
-//**********************************************************************
-// =================================================================
-//  Function:    convert_to_pack ()
-// =================================================================
-Static
-    Void
-    convert_to_pack(Char *buf, Int16 rm, Int16 num)
-{
-  Char pc;
-
-  while (num--)
-  {
-    pc = rm % 10;
-    rm /= 10;
-    pc |= (rm % 10) * 16;
-    rm /= 10;
-    buf[num] = pc;
-  }
-}
 
 // =================================================================
 //  Function:    exec_command ()
 // =================================================================
-#pragma linkage(QCMDEXC, OS)
-void QCMDEXC(Char *, void *);
-
 Static
-    Int16
-    exec_command(Char *cmd, Int16 line)
+Int16
+exec_command(Char* cmd, Int16 line)
 {
-  Int16 rc = 0;
-  Int16 rm;
-  static _Packed struct qcmdexc
+  // No need execute command
+  if (opt_no_execute())
   {
-    Char integral[5];
-    Char zeros[2];
-    Char sign;
-  } qcmd = {"\0\0\0\0\0", "\0\0", 0x0f};
-  Void (*old_signal_fct)(int);
+    // Command is no 'TMKMAKE'
+    if (!cmd_is_make)
+      return 0;
 
-#ifdef SRVOPT
-  if (srvopt_function())
-    printf("FCT:exec_command(\"%s\")\n", cmd);
-#endif
-  if (!opt_no_execute())
-  {
-    // execute command in text
-    // check for command text too long
-    rm = strlen(cmd);
-    if (rm > QCMDEXC_MAX_SZ)
-    {
-      log_error_and_exit(CMD_EXCEEDED_3000, NULL, line);
-    }
-    // set up QCMDEXC command structure to be executed
-    convert_to_pack((char *)&qcmd, rm, 5);
-    system_cmd_sev = 0;
-    old_signal_fct = signal(SIGALL, &system_cmd_trap);
-    QCMDEXC(cmd, (void *)&qcmd);
-    signal(SIGALL, old_signal_fct);
-
-    rm = opt_get_rtncde_methods();
-    if (rm != RTN_LURC)
-    {
-      // needs to handling exception handling method
-      rc = system_cmd_sev;
-    }
-    if (system_cmd_sev == 0 && rm != RTN_EXCEPTION)
-    {
-      // needs to handling LURC handling method
-      rc = __rtvlurc();
-    }
-  } // if( !opt_no_execute() )
-  else
-  {
-    // do not execute command; except $(MAKE)
-    if (cmd_is_make)
-    {
-      // propagate the opt_no_execute to nested make
-      cmd = create_nested_make_cmd(cmd, &t1);
-      // check for command text too long
-      rm = strlen(cmd);
-      if (rm > QCMDEXC_MAX_SZ)
-      {
-        log_error_and_exit(CMD_EXCEEDED_3000, NULL, line);
-      }
-      // set up QCMDEXC command structure to be executed
-      convert_to_pack((char *)&qcmd, rm, 5);
-      system_cmd_sev = 0;
-      old_signal_fct = signal(SIGALL, &system_cmd_trap);
-      QCMDEXC(cmd, (void *)&qcmd);
-      signal(SIGALL, old_signal_fct);
-
-      if (system_cmd_sev == 0)
-        rc == __rtvlurc();
-    }
+    // Propagate the opt_no_execute to nested make
+    cmd = create_nested_make_cmd(cmd, &t1);
   }
-#ifdef SRVOPT
-  if (srvopt_fctrtn())
-    printf("RTN:exec_command:%d\n", rc);
-#endif
-  return (rc);
+
+  // Check for command text too long
+  if (strlen(cmd) > QCMDEXC_MAX_SZ)
+    log_error_and_exit(CMD_EXCEEDED_3000, NULL, line);
+
+  // Execute command and processing result
+  Int16 severity = eventf_execute_command(cmd);
+
+  if (severity == 0 &&
+      (cmd_is_make || opt_get_rtncde_methods() != RTN_EXCEPTION))
+    return __rtvlurc();
+
+  return severity;
 }
+
 
 // =================================================================
 //  Function:    set_pre_defined_macros ()

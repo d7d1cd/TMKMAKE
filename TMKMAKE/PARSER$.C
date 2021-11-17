@@ -945,7 +945,6 @@ read_next_line(Int16 *line)
   Boolean cont_line;
   Boolean read_more;
   Int32 read_cnt;
-  Int32 tot_cnt;
   Char *hp; // buffer head pointer
   Char *tp; // buffer tail pointer
   Char *fn;
@@ -961,7 +960,6 @@ read_next_line(Int16 *line)
   try_again:
   read_more = TRUE;
   cont_line = FALSE;
-  tot_cnt   = 0;
   cur_line  = rd_line + 1;
 
   // loop and read ONE line or lines concatenated by continuation characters
@@ -1022,7 +1020,7 @@ read_next_line(Int16 *line)
       ++read_cnt;
     }
 
-    tot_cnt = append_rd_buf(read_cnt, hp, &ibuf2_sz, &ibuf2);
+    append_rd_buf(read_cnt, hp, &ibuf2_sz, &ibuf2);
   } // while (read_more)
 
 
