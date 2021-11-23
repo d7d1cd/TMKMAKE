@@ -1,4 +1,5 @@
+lib = CSNtst
+
 all:
-   -dltf +
-                FILE(CSNTST/T\#)
-    CRTSRCPF FILE(CSNTST/T\#)
+   -dltf file($(lib)/T\#)
+   crtsrcpf   file($(lib)/T\#)

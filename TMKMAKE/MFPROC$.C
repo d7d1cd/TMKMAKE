@@ -251,6 +251,9 @@ exec_command(Char* cmd, Int16 line)
   // Execute command and processing result
   Int16 severity = eventf_execute_command(cmd);
 
+  if (severity == -1)
+    log_error_and_exit(INV_CMD_SYNTAX, NULL, line);
+
   if (severity == 0 &&
       (cmd_is_make || opt_get_rtncde_methods() != RTN_EXCEPTION))
     return __rtvlurc();

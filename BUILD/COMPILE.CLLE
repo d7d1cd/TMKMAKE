@@ -377,9 +377,9 @@ PGM PARM(&@SRCLIB &@DSTLIB)
   ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
              SEV(00) LOGPRB(*NO) ALROPT(*NO) +
              FMT((*CHAR 5)) MSGID(TMK9032) +
-             MSG('Invalid command syntax in line &1; rejected by QCMDEXC.') +
-             SECLVL('&N Cause . . . . . :   The command text passed to QCMDEXC was rejected due to invalid command +
-                     syntax. &N Recovery  . . . :   Correct the invalid command sequences in the description file +
+             MSG('Invalid command syntax in line &1.') +
+             SECLVL('&N Cause . . . . . :   The command text has invalid syntax. +
+                     &N Recovery  . . . :   Correct the invalid command sequences in the description file +
                      and try again.')
 
   ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
@@ -577,7 +577,7 @@ PGM PARM(&@SRCLIB &@DSTLIB)
 
   CRTCPPMOD  MODULE(&TMPLIB/EVENTF) SRCFILE(&SRCLIB/TMKMAKE) SRCMBR(EVENTF$) +
              DBGVIEW(&DBGMOD) OPTIMIZE(&OPTMOD) +
-             OPTION(*EVENTF) PFROPT(*STRDONLY) +
+             OPTION(*EVENTF) PFROPT(*STRDONLY) LANGLVL(*EXTENDED0X) +
              CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
