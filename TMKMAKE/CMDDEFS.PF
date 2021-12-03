@@ -1,5 +1,5 @@
                                             UNIQUE
-     A          R CMDDEFSR
-     A            CMDNAME       10A         COLHDG('Command name')
-     A          K CMDNAME
+     A          R CMDDEFS
+     A            NAME          10A         COLHDG('Command name')
+     A          K NAME
 

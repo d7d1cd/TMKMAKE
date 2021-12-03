@@ -13,9 +13,9 @@
 <booleanAttribute key="com.ibm.etools.systems.as400.debug.ui.debugProgram.terminate." value="true"/>
 <stringAttribute key="com.ibm.etools.systems.as400.debug.ui.debugProgram.type." value="*PGM"/>
 <stringAttribute key="com.ibm.etools.systems.as400.debug.ui.error.advancedTab" value=""/>
-<stringAttribute key="com.ibm.etools.systems.as400.debug.ui.error.debuggeInfoTab" value="IBM i Debug Server has not been started yet.&#10;Please right click on one of the Subsystems in the Remote System View, and choose Remote Server -&gt; Debug -&gt; Start. Or, you can run command STRDBGSVR in your IBM i server."/>
+<stringAttribute key="com.ibm.etools.systems.as400.debug.ui.error.debuggeInfoTab" value=""/>
 <stringAttribute key="com.ibm.etools.systems.as400.debug.ui.error.launchInfoTab" value=""/>
-<stringAttribute key="com.ibm.etools.systems.as400.debug.ui.launchCommand.LaunchCommandName" value="SBMJOB CMD(TMKMAKE SRCMBR(MAKEFILE) OPTION(*NOBIRULES)) INLLIBL(*CURRENT) MSGQ(*NONE)"/>
+<stringAttribute key="com.ibm.etools.systems.as400.debug.ui.launchCommand.LaunchCommandName" value="SBMJOB CMD(TMKMAKE SRCFILE(CSNSRC/DEBUG) SRCMBR(MAKEFILE) OPTION(*NOBIRULES *EVENTF)) INLLIBL(*CURRENT) MSGQ(*NONE)"/>
 <listAttribute key="org.eclipse.debug.ui.favoriteGroups">
 <listEntry value="org.eclipse.debug.ui.launchGroup.debug"/>
 </listAttribute>

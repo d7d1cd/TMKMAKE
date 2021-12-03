@@ -1,5 +1,5 @@
-lib = CSNtst
+lib = CSNSRC
 
 all:
-   -dltf file($(lib)/T\#)
-   crtsrcpf   file($(lib)/T\#)
+   -dltmod module($(lib)/ccode)
+    crtcmod module($(lib)/ccode) srcfile($(lib)/debug) option(*showinc)
