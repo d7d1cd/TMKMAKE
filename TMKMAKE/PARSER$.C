@@ -544,72 +544,6 @@ Static
   return (dp);
 }
 
-/* ================================================================= */
-/*  Function:    CPF4102_handler ()                                  */
-/* ================================================================= */
-
-Void CPF4102_handler(int sig)
-{
-#ifdef __ILEC400__
-  _INTRPT_Hndlr_Parms_T excinfo; /* exception data structure   */
-  error_rtn errcode;
-#else
-  sigdata_t *data; /* pointer to exception data area     */
-  sigact_t *act;   /* pointer to exception action area   */
-#endif
-
-  /* Set ptr to sigdata structure                               */
-#ifdef __ILEC400__
-  _GetExcData(&excinfo);
-#else
-  data = sigdata();
-#endif
-  /* check the exception is an CPF message                      */
-#ifdef __ILEC400__
-  if (memcmp(excinfo.Msg_Id, "CPF4102", 7))
-  {
-#else
-  if (memcmp(data->exmsg->exmsgid, "CPF4102", 7) || memcmp(data->exmsg->exmsglib, "*CURLIB", 7))
-  {
-#endif
-    /* if not desired CPF messages, return for default      */
-    /* exception handling                                   */
-    return;
-  }
-
-#ifdef __ILEC400__
-  errcode.rtn_area_sz = 0;
-  QMHCHGEM(&(excinfo.Target),
-           0,
-           excinfo.Msg_Ref_Key,
-#if DEBUG
-           opt_debug() ? MOD_HANDLE : MOD_RMVLOG,
-#else
-           MOD_RMVLOG,
-#endif
-           "",
-           0,
-           &errcode);
-#else
-  /* set exception action flag before returning back to exeption  */
-  /*      manager.                                                */
-  act = data->sigact;
-  act->xhalt =               /* Do not terminate exec of pgm         */
-      act->xpmsg =           /* No runtime messages are issued       */
-      act->xumsg =           /* No runtime messages are issued       */
-      act->xdebug =          /* Do not invoke debugger               */
-      act->xdecerr =         /* Do not decr run time counter         */
-      act->xresigprior =     /* Do not resignal exception            */
-      act->xresigouter =     /* Do not resignal exception            */
-      act->xrtntosgnler = 0; /* Do not resignal                      */
-  act->xremovemsg =          /* remove message from job log          */
-#endif
-#if DEBUG
-  opt_debug() ? 0 : 1;
-#else
-      1;
-#endif
-}
 
 // =================================================================
 //  Function:    open_source_file ()
@@ -624,7 +558,6 @@ open_source_file(Incl_t *mf)
   #endif
 
   // open source file using record I/O
-  signal(SIGIO, &CPF4102_handler);
   if ((mf->f = _Ropen(mf->name, "rr")) == NULL)
   {
     #ifdef SRVOPT

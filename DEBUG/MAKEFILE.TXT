@@ -1,5 +1,6 @@
 lib = CSNSRC
 
-all:
-   -dltmod module($(lib)/ccode)
-    crtcmod module($(lib)/ccode) srcfile($(lib)/debug) option(*showinc)
+target_1:
+   -dltmod module($(lib)/m)
+   -dltf file($(lib)/f)
+

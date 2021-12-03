@@ -70,7 +70,7 @@ Int16 eventf_execute_command(const char* cmd)
   try {
     cmddefs = get_cmddefs();
   } catch (std::exception& e) {
-//    parms::flag_eventf = false;
+    parms::flag_eventf = false;
     return mfCmd.execute();
   }
 
@@ -83,6 +83,7 @@ Int16 eventf_execute_command(const char* cmd)
     return mfCmd.execute();
 
 
+  throw 1;
   return 0;
 }
 
