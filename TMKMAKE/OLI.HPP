@@ -11,6 +11,10 @@
 #include <qcmdchk.h>
 #include <algorithm>
 #include <recio.h>
+#include <qusrjobi.h>
+#include <new>
+#include <vector>
+#include <qusec.h>
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -49,14 +53,6 @@ typename remove_reference<T>::type&& move(T&& t) {
 
 
 
-//***** TYPES DECLARATIONS *********************************************************************************************
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-
-
 //***** GENERAL PURPOSE FUNCTIONS **************************************************************************************
 namespace oli {
 
@@ -79,6 +75,38 @@ void fill_string(char (&dst)[N], const std::string& src)
   std::copy(src.begin(), src.begin() + less, dst);
   std::fill(dst + less, dst + N, BLANK);
 }
+
+} // namespace oli { ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+//***** ISTRING CLASS DECLARATION **************************************************************************************
+namespace oli {
+
+template <size_t N>
+class istring
+{
+  char m_data[N];
+
+
+  public:
+  istring() {
+    clear();
+  }
+
+
+  istring(const char* src) {
+    clear();
+    auto less = std::min(N, std::strlen(src));
+    std::copy(src, src + less, m_data);
+  }
+
+  void clear() {
+    std::fill(m_data, m_data + N, BLANK);
+  }
+};
 
 } // namespace oli { ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -120,16 +148,19 @@ class command
   }
 
 
-  public:
-  command(const char* cmd)
-  : m_command(cmd) {
-    auto begin = m_command.begin();
-    std::transform(begin, m_command.end(), begin, toupper);
+  void check_syntax() const {
+    if (!process_command(QCMDCHK))
+      throw std::runtime_error("Invalid command syntax");
   }
 
 
-  bool check_syntax() const {
-    return process_command(QCMDCHK);
+  public:
+  command& operator=(const char* rhs) {
+    m_command = rhs;
+    auto begin = m_command.begin();
+    std::transform(begin, m_command.end(), begin, toupper);
+    check_syntax();
+    return *this;
   }
 
 
@@ -142,6 +173,22 @@ class command
   std::string name() const {
     auto end = m_command.find_first_of(BLANK);
     return m_command.substr(0, end);
+  }
+
+
+  std::string keyword_value(const std::string& keyword) const {
+    auto search = keyword + "(";
+    auto s  = m_command.find(search);
+    if (s == std::string::npos)
+      return std::string();
+
+    s += search.length();
+    auto e = m_command.find_first_of(")", s);
+    auto result =  m_command.substr(s, e - s);
+
+    s = result.find_first_not_of(BLANK);
+    e = result.find_last_not_of(BLANK);
+    return result.substr(s, e - s + 1);
   }
 };
 
@@ -349,6 +396,63 @@ class file
 
 } // namespace oli { ///////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+
+
+
+//***** CURRENT JOB CLASS DECLARATION **********************************************************************************
+namespace oli {
+
+class current_job
+{
+  Qwc_JOBI0700_t              m_job_info;
+  std::vector<Qwc_Lib_List_t> m_libraries;
+
+
+  void retrieve_job_info(void* buffer, size_t size) {
+    istring<26> job_name("*");
+    istring<16> job_id;
+    Qus_EC_t error = { sizeof(Qus_EC_t) };
+
+    QUSRJOBI(buffer, size, "JOBI0700", &job_name, &job_id, &error);
+
+    if (error.Bytes_Available)
+      throw std::runtime_error("Retrieve job information error");
+  }
+
+
+  public:
+  current_job() {
+    update();
+  }
+
+
+  void update() {
+    retrieve_job_info(&m_job_info, sizeof(m_job_info));
+    if (m_job_info.Bytes_Return == m_job_info.Bytes_Avail)
+      return;
+
+    std::vector<char> buffer(m_job_info.Bytes_Avail);
+    retrieve_job_info(&buffer[0], buffer.size());
+    std::memcpy(&m_job_info, &buffer[0], sizeof(m_job_info));
+
+    m_libraries.resize(m_job_info.Libs_In_Syslibl + m_job_info.Prod_Libs +
+                       m_job_info.Curr_Libs + m_job_info.Libs_In_Usrlibl);
+    std::memcpy(&m_libraries[0], &buffer[sizeof(m_job_info)],
+                buffer.size() - sizeof(m_job_info));
+  }
+
+
+  std::string current_library() const {
+    if (!m_job_info.Curr_Libs)
+      return std::string();
+
+    auto idx = m_job_info.Libs_In_Syslibl + m_job_info.Prod_Libs;
+    return get_string(m_libraries[idx].Lib_Name);
+  }
+};
+
+} // namespace oli { ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 #endif

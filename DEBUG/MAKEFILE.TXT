@@ -1,6 +1,6 @@
 lib = CSNSRC
 
 target_1:
-   -dltmod module($(lib)/m)
-   -dltf file($(lib)/f)
+    crtcmod module(mod)
+    crtpgm option(*dupproc) pgm(  $(lib)/prog        )
 

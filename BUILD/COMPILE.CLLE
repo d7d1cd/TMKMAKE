@@ -74,11 +74,11 @@ PGM PARM(&@SRCLIB &@DSTLIB)
 
   SNDPGMMSG  MSG('BEGIN MONITORING') KEYVAR(&LOWKEY)
   RUNSQL     SQL('insert into ' *CAT &DSTLIB *CAT '/CMDDEFS +
-                  (NAME) values +
-                  (''CRTCMOD''), +
-                  (''CRTCPPMOD''), +
-                  (''CRTRPGMOD''), +
-                  (''CRTPGM'') +
+                  (  NAME,          OBJECT) values +
+                  (''CRTCMOD'',   ''MODULE''), +
+                  (''CRTCPPMOD'', ''MODULE''), +
+                  (''CRTRPGMOD'', ''MODULE''), +
+                  (''CRTPGM'',    ''PGM'') +
                  ') +
              COMMIT(*NONE)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADCMDF)
@@ -505,13 +505,21 @@ PGM PARM(&@SRCLIB &@DSTLIB)
                      character in output translation macro format. &N Recovery  . . . :   Correct the invalid macro +
                      syntax and try again.')
 
-
   ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
              SEV(00) LOGPRB(*NO) ALROPT(*NO) +
              FMT((*CHAR 1000)) MSGID(TMK9048) +
              MSG('Wrong number of parameters') +
              SECLVL('&N Cause . . . . . :   Incorrect number of parameters passed to the program. +
                      &N Recovery  . . . :   Run the program using the TMKMAKE command.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9049) +
+             MSG('No library specified to create the object in line &1.') +
+             SECLVL('&N Cause . . . . . :   The create object command did not specify a placement +
+                     library and the current job library is *CRTDFT. +
+                     &N Recovery  . . . :   Specify the library to place the object in the command, +
+                     or specify the current job library.')
 
 
 
@@ -595,7 +603,7 @@ PGM PARM(&@SRCLIB &@DSTLIB)
 
   CRTCPPMOD  MODULE(&TMPLIB/EVENTF) SRCFILE(&SRCLIB/TMKMAKE) SRCMBR(EVENTF$) +
              DBGVIEW(&DBGMOD) OPTIMIZE(&OPTMOD) +
-             OPTION(*EVENTF) PFROPT(*STRDONLY) LANGLVL(*EXTENDED0X) +
+             OPTION(*EVENTF *SHOWUSR) PFROPT(*STRDONLY) LANGLVL(*EXTENDED0X) +
              CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 

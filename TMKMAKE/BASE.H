@@ -60,4 +60,7 @@ typedef double Float64; /* 64 bit floating point        */
 #define Max(a, b) (((a) > (b)) ? (a) : (b))
 #define Min(a, b) (((a) < (b)) ? (a) : (b))
 
+#define EXEC_INVALID_CMD  -1   // command syntax invalid
+#define EXEC_OBJLIB_EMPTY -2   // object library is empty
+
 #endif /* _TMKHBASE_H */

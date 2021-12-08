@@ -1,5 +1,6 @@
                                             UNIQUE
      A          R CMDDEFS
-     A            NAME          10A         COLHDG('Command name')
+     A            NAME          10A
+     A            OBJECT        10A
      A          K NAME
 
