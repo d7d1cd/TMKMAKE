@@ -15,7 +15,7 @@
 <stringAttribute key="com.ibm.etools.systems.as400.debug.ui.error.advancedTab" value=""/>
 <stringAttribute key="com.ibm.etools.systems.as400.debug.ui.error.debuggeInfoTab" value=""/>
 <stringAttribute key="com.ibm.etools.systems.as400.debug.ui.error.launchInfoTab" value=""/>
-<stringAttribute key="com.ibm.etools.systems.as400.debug.ui.launchCommand.LaunchCommandName" value="SBMJOB CMD(TMKMAKE SRCFILE(CSNSRC/DEBUG) SRCMBR(MAKEFILE) OPTION(*EVENTF)) CURLIB(CSNSRC) INLLIBL(*CURRENT) MSGQ(*NONE)"/>
+<stringAttribute key="com.ibm.etools.systems.as400.debug.ui.launchCommand.LaunchCommandName" value="SBMJOB CMD(TMKMAKE SRCFILE(CSNSRC/DEBUG) SRCMBR(MAKEFILE) OPTION(*EVENTF)) JOBQ(QGPL/D7D1CD) CURLIB(CSNSRC) INLLIBL(*CURRENT) MSGQ(*NONE)"/>
 <listAttribute key="org.eclipse.debug.ui.favoriteGroups">
 <listEntry value="org.eclipse.debug.ui.launchGroup.debug"/>
 </listAttribute>

@@ -15,6 +15,7 @@
 #include <new>
 #include <vector>
 #include <qusec.h>
+#include <cstdarg>
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -76,6 +77,25 @@ void fill_string(char (&dst)[N], const std::string& src)
   std::fill(dst + less, dst + N, BLANK);
 }
 
+
+std::string format(const char* fmt, ...)
+{
+  static std::vector<char> buf(200);
+  size_t len = 0;
+  va_list args, copyArgs;
+  va_start(args, fmt);
+
+  do {
+    va_copy(copyArgs, args);
+    if (len) buf.resize(buf.size() * 2);
+    len = vsnprintf(&buf[0], buf.size(), fmt, copyArgs);
+  } while (len == buf.size() - 1)
+
+  va_end(copyArgs);
+  va_end(args);
+  return std::string(buf.begin(), buf.begin() + len);
+}
+
 } // namespace oli { ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -132,8 +152,9 @@ void system_command_trap(int sig) {
 // "command" class declaration
 class command
 {
-  static const std::string EVENTF_OPTION;
-  std::string m_command;
+  typedef std::string string;
+  typedef std::pair<string::size_type, string::size_type> range_t;
+  string m_command;
 
 
   bool process_command(command_processor cmd_proc) const {
@@ -154,6 +175,25 @@ class command
   }
 
 
+  range_t keyword_value_range(const string& keyword) const {
+    auto search = keyword + '(';
+    auto s = m_command.find(search);
+    if (s == string::npos)
+      return std::make_pair(s, s);
+
+    s += search.length();
+    auto e = s;
+    auto b = 0;
+    for (; e < m_command.length(); ++e)
+      if (m_command[e] == '(')
+        ++b;
+      else if (m_command[e] == ')' && b-- == 0)
+        break;
+
+    return std::make_pair(s, e);
+  }
+
+
   public:
   command& operator=(const char* rhs) {
     m_command = rhs;
@@ -164,35 +204,65 @@ class command
   }
 
 
+  command& operator=(const string& rhs) {
+    return operator=(rhs.c_str());
+  }
+
+
   severity_t execute() const {
     process_command(QCMDEXC);
     return g_exception_info.Severity;
   }
 
 
-  std::string name() const {
+  string name() const {
     auto end = m_command.find_first_of(BLANK);
     return m_command.substr(0, end);
   }
 
 
-  std::string keyword_value(const std::string& keyword) const {
-    auto search = keyword + "(";
-    auto s  = m_command.find(search);
-    if (s == std::string::npos)
-      return std::string();
+  string keyword_value(const string& keyword) const {
+    auto range = keyword_value_range(keyword);
+    if (range.first == string::npos)
+      return string();
 
-    s += search.length();
-    auto e = m_command.find_first_of(")", s);
-    auto result =  m_command.substr(s, e - s);
+    auto s = m_command.find_first_not_of(BLANK, range.first);
+    auto e = m_command.find_last_not_of(BLANK, --range.second);
+    return m_command.substr(s, e - s + 1);
+  }
 
-    s = result.find_first_not_of(BLANK);
-    e = result.find_last_not_of(BLANK);
-    return result.substr(s, e - s + 1);
+
+  void add_keyword_value(const string& keyword, const string& value) {
+    auto range = keyword_value_range(keyword);
+    if (range.first == string::npos)
+      m_command += BLANK + keyword + "(" + value + ")";
+    else
+      m_command.insert(range.second, BLANK + value);
   }
 };
 
-const std::string command::EVENTF_OPTION = "*EVENTF";
+} // namespace oli { ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+//***** FILE_NAME CLASS DECLARATION ************************************************************************************
+namespace oli {
+
+struct file_name
+{
+  typedef std::string string;
+  string library, file, member;
+
+  public:
+  file_name(const string& l, const string& f, const string& m)
+  : library(l), file(f), member(m) {}
+
+  string libq_name() const {
+    return library + '/' + file;
+  }
+};
 
 } // namespace oli { ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -369,10 +439,6 @@ class file
 
   public:
   typedef detail::iterator<R, K> iterator;
-
-
-  file()
-  : m_file() {}
 
 
   file(const std::string& path, const std::string& mode = "rr")

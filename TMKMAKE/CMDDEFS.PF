@@ -2,5 +2,8 @@
      A          R CMDDEFS
      A            NAME          10A
      A            OBJECT        10A
+     A            METHOD         1A
+     A            TYPE           1A
+     A            PROCESS        1A
      A          K NAME
 

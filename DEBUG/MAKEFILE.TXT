@@ -1,6 +1,8 @@
-lib = CSNSRC
+srclib  = CSNSRC
+dstlib  = CSNTST
+dbgview = *ALL
 
-target_1:
-    crtcmod module(mod)
-    crtpgm option(*dupproc) pgm(  $(lib)/prog        )
-
+all:
+    CRTCMOD MODULE($(dstlib)/CCODE) SRCFILE($(srclib)/DEBUG) SRCMBR(CCODE) +
+            DBGVIEW($(dbgview)) PFROPT(*STRDONLY) OPTION(*SHOWUSR) +
+            CHECKOUT(*COND *PARM *REACH *UNUSED)
