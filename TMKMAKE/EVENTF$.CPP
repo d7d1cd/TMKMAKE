@@ -3,6 +3,8 @@
 
 #include "MAPINC/cmddefs.h"
 #include "MAPINC/evfevent.h"
+
+#include <xxfdbk.h>
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -10,8 +12,9 @@
 //***** PRIVATE VARIABLE DEFINITIONS ***********************************************************************************
 namespace { namespace parms {
 
-bool flag_eventf;
-std::string dstlib;
+const char* EVFEVENT = "EVFEVENT";
+bool        eventf_option;
+std::string evfevent_libarary;
 
 }} // namespace { namespace parms { ////////////////////////////////////////////////////////////////////////////////////
 
@@ -66,20 +69,20 @@ copy_evfevent(const oli::file_name& src, char type)
 {
   // Set the name of the target member
   auto dst = src;
-  dst.library = parms::dstlib;
+  dst.library = parms::evfevent_libarary;
   dst.member.resize(10, '_');
   *dst.member.rbegin() = type;
 
   // Сopying member
   oli::command cmd;
   cmd = oli::format("CPYF FROMFILE(%s) FROMMBR(%s) TOFILE(%s) TOMBR(%s) "
-                    "MBROPT(*REPLACE) CRTFILE(*YES)",
+                    "MBROPT(*REPLACE) FMTOPT(*NOCHK) CRTFILE(*YES)",
                     src.libq_name().c_str(), src.member.c_str(),
                     dst.libq_name().c_str(), dst.member.c_str());
   cmd.execute();
 
   // Garbage removal
-  if (src.library == parms::dstlib)
+  if (src.library == parms::evfevent_libarary)
     cmd = oli::format("RMVM FILE(%s) MBR(%s)", src.libq_name().c_str(),
                       src.member.c_str());
   else
@@ -96,18 +99,46 @@ copy_evfevent(const oli::file_name& src, char type)
 
 //***** PUBLIC FUNCTIONS DEFINITIONS ***********************************************************************************
 
-// SETTING THE FLAG OF THE NEED TO CREATE AN EVFEVENT FILE
-Void eventf_set_flag_eventf(bool flag)
+// INITIALIZING EVFEVENT FILE CREATION MODULE
+Void eventf_initialize(bool eventf_option, const char* makefile)
 {
-  parms::flag_eventf = flag;
-}
+  parms::eventf_option = eventf_option;
+  if (!eventf_option) return;
 
 
+  // Determining the name of the library to host EVFEVENT
+  auto mf = _Ropen(makefile, "rr");
+  if (!mf) {
+    parms::eventf_option = false;
+    return;
+  }
 
-// DETERMINING THE NAME OF THE LIBRARY TO HOST THE EVFEVENT FILE
-Void eventf_set_dstlib(const _XXOPFB_T* fb)
-{
-  parms::dstlib = oli::get_string(fb->library_name);
+  auto fb = _Ropnfbk(mf);
+  parms::evfevent_libarary = oli::get_string(fb->library_name);
+  _Rclose(mf);
+
+
+  // Create EVFEVENT if doesn't exist
+  oli::command cmd;
+  auto qname = parms::evfevent_libarary + '/' + parms::EVFEVENT;
+  cmd = oli::format("CHKOBJ OBJ(%s) OBJTYPE(*FILE)", qname.c_str());
+
+  if (cmd.execute()) {
+    cmd = oli::format("CRTPF FILE(%s) RCDLEN(500) MAXMBRS(*NOMAX)", qname.c_str());
+    if (cmd.execute()) parms::eventf_option = false;
+    return;
+  }
+
+
+  // This crutch is needed to force RDi to fetch all messages from EVFEVENT, not just new ones.
+  auto tmp = "EVFEVENT00";
+  auto copy = oli::format("RNMOBJ OBJ(%s/%%s) OBJTYPE(*FILE) NEWOBJ(%%s)",
+                          parms::evfevent_libarary.c_str());
+
+  cmd = oli::format(copy.c_str(), parms::EVFEVENT, tmp);
+  cmd.execute();
+  cmd = oli::format(copy.c_str(), tmp, parms::EVFEVENT);
+  cmd.execute();
 }
 
 
@@ -125,7 +156,7 @@ Int16 eventf_execute_command(const char* cmd)
 
 
   // If *EVENTF option not set for TMKMAKE
-  if (!parms::flag_eventf)
+  if (!parms::eventf_option)
     return mfCmd.execute();
 
 
@@ -136,7 +167,7 @@ Int16 eventf_execute_command(const char* cmd)
     cmddefs = get_cmddefs();
     currentJob = get_current_job();
   } catch (std::exception& e) {
-    parms::flag_eventf = false;
+    parms::eventf_option = false;
     return mfCmd.execute();
   }
 

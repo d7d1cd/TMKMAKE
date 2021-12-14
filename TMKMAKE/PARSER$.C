@@ -27,7 +27,6 @@
 #include "builtin"
 #include "sysapi"
 #include "msghandle"
-#include "eventf"
 
 /***********************************************************************
         Variable declarations
@@ -591,9 +590,6 @@ open_source_file(Incl_t *mf)
   }
 
   mf->eof = FALSE;
-
-  // Determining the name of the library to host the EVFEVENT file
-  eventf_set_dstlib(ofb);
 
   #ifdef SRVOPT
   if (srvopt_detail())

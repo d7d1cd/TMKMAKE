@@ -75,9 +75,8 @@ PGM PARM(&@SRCLIB &@DSTLIB)
   SNDPGMMSG  MSG('BEGIN MONITORING') KEYVAR(&LOWKEY)
   RUNSQL     SQL('insert into ' *CAT &DSTLIB *CAT '/CMDDEFS +
                   (NAME,          OBJECT,     METHOD, TYPE,  PROCESS) values +
+                  (''CRTPF'',     ''FILE'',   ''E'',  ''F'', '' ''), +
                   (''CRTCMOD'',   ''MODULE'', ''E'',  ''M'', '' ''), +
-                  (''CRTCPPMOD'', ''MODULE'', ''E'',  ''M'', '' ''), +
-                  (''CRTRPGMOD'', ''MODULE'', ''E'',  ''M'', '' ''), +
                   (''CRTPGM'',    ''PGM'',    ''J'',  ''P'', '' '')  +
                  ') +
              COMMIT(*NONE)

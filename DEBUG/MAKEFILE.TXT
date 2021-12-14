@@ -1,8 +1,0 @@
-srclib  = CSNSRC
-dstlib  = CSNTST
-dbgview = *ALL
-
-all:
-    CRTCMOD MODULE($(dstlib)/CCODE) SRCFILE($(srclib)/DEBUG) SRCMBR(CCODE) +
-            DBGVIEW($(dbgview)) PFROPT(*STRDONLY) OPTION(*SHOWUSR) +
-            CHECKOUT(*COND *PARM *REACH *UNUSED)

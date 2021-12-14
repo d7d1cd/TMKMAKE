@@ -436,6 +436,7 @@ Void process_options(int argc, Char** argv)
   *cp = 0;
   makefile_mbr = cp; // remember member insertion point
 
+
   // build the makefile member list from command input
   if (strncmp(argv[ARGV_SRCMBR], "*ALL", 4) == 0)
   {
@@ -562,8 +563,9 @@ Void process_options(int argc, Char** argv)
   if (argv[ARGV_USRMSG][0] == 'S')
     set_usrmsg_to_session();
 
-  // Setting the flag of the need to create an EVFEVENT file
-  eventf_set_flag_eventf(options & OPT_EVENTF);
+
+  // Initializing the EVFEVENT create file option
+  eventf_initialize(options & OPT_EVENTF, makefile_name);
 }
 
 
