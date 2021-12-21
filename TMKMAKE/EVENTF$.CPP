@@ -71,6 +71,15 @@ evfevent_method(oli::command& cmd, const oli::file_name& efname, char process)
 oli::severity_t
 joblog_method(oli::command& cmd, const oli::file_name& efname)
 {
+  auto joblog   = oli::current_job::joblog();
+  auto start    = joblog.last();
+  auto severity = cmd.execute();
+  auto finish   = joblog.end();
+
+
+
+
+  return severity;
 }
 
 } // namespace { ///////////////////////////////////////////////////////////////////////////////////////////////////////

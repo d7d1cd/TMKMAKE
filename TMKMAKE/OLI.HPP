@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <recio.h>
 #include <qusrjobi.h>
+#include <qmhrcvpm.h>
 #include <new>
 #include <vector>
 #include <qusec.h>
@@ -125,6 +126,14 @@ class istring
 
   void clear() {
     std::fill(m_data, m_data + N, BLANK);
+  }
+
+  operator char*() {
+    return m_data;
+  }
+
+  operator const char*() const {
+    return m_data;
   }
 };
 
@@ -404,7 +413,7 @@ class iterator
   R&   operator*()                     { return m_record; }
 
 
-  R& operator++() {
+  iterator& operator++() {
     if (m_key_size)
       _Rreadk(m_file.handle(), &m_record, sizeof(R), __KEY_NEXTEQ | __NO_LOCK,
               nullptr, m_key_size);
@@ -412,7 +421,7 @@ class iterator
       _Rreadn(m_file.handle(), &m_record, sizeof(R), __NO_LOCK);
 
     check_end();
-    return m_record;
+    return *this;
   }
 };
 
@@ -466,12 +475,134 @@ class file
 
 
 
-//***** JOB LOG CLASS DECLARATION **************************************************************************************
+//***** JOB_LOG_ITERATOR CLASS DEFINITION ******************************************************************************
 namespace job_detail {
 
-class job_log_iterator
+// Message structure (depends on the message type)
+template <typename T>
+struct message
 {
+  T           detail;
+  std::string text;
+  std::string help;
 
+  message() { reset_key(); }
+
+  void reset_key() {
+    int k = 0;
+    std::memcpy(detail.Message_Key, &k, sizeof(int));
+  }
+
+  int key() const {
+    int k = 0;
+    std::memcpy(&k, detail.Message_Key, sizeof(int));
+    return k;
+  }
+};
+
+
+// Types of messages retrieved
+namespace position {
+
+const char* NXTJLMSG = "*NXTJLMSG";
+const char* PRVJLMSG = "*PRVJLMSG";
+
+}
+
+
+// Family of functions for determining format name by format type
+template <typename T>
+constexpr char* format_name() { return T::unexpected_case; }
+
+template <>
+constexpr char* format_name<Qmh_Rcvpm_RCVM0100_t>() { return "RCVM1000"; }
+
+template <>
+constexpr char* format_name<Qmh_Rcvpm_RCVM0200_t>() { return "RCVM0200"; }
+
+template <>
+constexpr char* format_name<Qmh_Rcvpm_RCVM0300_t>() { return "RCVM0300"; }
+
+
+// Joblog iterator
+template <typename T>
+class joblog_iterator
+{
+  message<T> m_message;
+
+
+  bool receive_program_message(std::vector<char>& buffer, const char* position) {
+    typedef _Packed struct sizes_t {
+      decltype(T::Bytes_Returned) returned;
+      decltype(T::Bytes_Available) available;
+    };
+
+    Qus_EC_t error = { sizeof(Qus_EC_t) };
+    QMHRCVPM(&buffer[0], buffer.size(), format_name<T>(), oli::istring<10>("*"), 0,
+             oli::istring<10>(position), m_message.detail.Message_Key, 0,
+             oli::istring<10>("*SAME"), &error);
+
+    if (error.Bytes_Available)
+      throw std::runtime_error("Receive program message error");
+
+    sizes_t sizes;
+    std::memcpy(&sizes, &buffer[0], sizeof(sizes_t));
+    if (sizes.returned == sizes.available)
+      return true;
+
+    if (sizes.returned < sizes.available) {
+      buffer.resize(sizes.available);
+      return receive_program_message(buffer, position);
+    }
+
+    return false;
+  }
+
+
+  void get_message(const char* position) {
+    static std::vector<char> buffer(sizeof(T));
+    if (!receive_program_message(buffer, position)) {
+      m_message.reset_key();
+      return;
+    }
+
+    std::memcpy(&m_message.detail, &buffer[0], sizeof(T));
+    auto offset = sizeof(T);
+    auto length = m_message.detail.Length_Data_Returned;
+
+    if (m_message.detail.Length_Message_Returned) {
+      offset += length;
+      length = m_message.detail.Length_Message_Returned;
+    }
+
+    m_message.text.assign(&buffer[0] + offset, length);
+
+    offset += m_message.detail.Length_Message_Returned;
+    m_message.help.assign(&buffer[0] + offset, m_message.detail.Length_Help_Returned);
+  }
+
+
+  public:
+  joblog_iterator() {}
+  joblog_iterator(const char* position)       { get_message(position); }
+
+
+  bool operator==(const joblog_iterator& rhs) { return m_message.key() == rhs.m_message.key(); }
+  bool operator!=(const joblog_iterator& rhs) { return !(*this == rhs); }
+  message<T>* operator->()                    { return &m_message; }
+  message<T>& operator*()                     { return m_message; }
+
+
+  joblog_iterator& operator++() {
+    get_message(position::NXTJLMSG);
+    return *this;
+  }
+
+
+  joblog_iterator& operator--() {
+    get_message(position::PRVJLMSG);
+    return *this;
+  }
 };
 
 } // namespace job_detail { ////////////////////////////////////////////////////////////////////////////////////////////
@@ -480,16 +611,17 @@ class job_log_iterator
 
 
 
-//***** JOB LOG CLASS DECLARATION **************************************************************************************
+//***** JOB_LOG CLASS DEFINITION ***************************************************************************************
 namespace job_detail {
 
-class job_log
+class joblog
 {
-  typedef job_log_iterator iterator;
+  typedef joblog_iterator<Qmh_Rcvpm_RCVM0200_t> iterator;
 
   public:
-  iterator last_message() const {
-  }
+  iterator begin() const { return iterator(position::NXTJLMSG); }
+  iterator last()  const { return iterator(position::PRVJLMSG); }
+  iterator end()   const { return iterator(); }
 };
 
 } // namespace job_detail { ////////////////////////////////////////////////////////////////////////////////////////////
@@ -503,9 +635,8 @@ namespace oli {
 
 class current_job
 {
-  Qwc_JOBI0700_t              m_job_info;
-  std::vector<Qwc_Lib_List_t> m_libraries;
-  job_detail::job_log         m_log;
+  Qwc_JOBI0700_t                           m_job_info;
+  std::vector<Qwc_Lib_List_t>              m_libraries;
 
 
   void retrieve_job_info(void* buffer, size_t size) {
@@ -551,8 +682,8 @@ class current_job
   }
 
 
-  job_detail::job_log log() {
-    return m_log;
+  static job_detail::joblog joblog() {
+    return job_detail::joblog();
   }
 };
 
