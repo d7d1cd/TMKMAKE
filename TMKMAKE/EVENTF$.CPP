@@ -33,12 +33,14 @@ get_cmddefs()
 }
 
 
+
 oli::current_job*
 get_current_job()
 {
   static oli::current_job currentJob;
   return &currentJob;
 }
+
 
 
 typedef std::pair<std::string, std::string> qname_t;
@@ -52,11 +54,12 @@ qname_t split_qname(const std::string& qname)
 }
 
 
+
 oli::severity_t
-evfevent_method(oli::command& mfCmd, const oli::file_name& evfeventName, char process)
+evfevent_method(oli::command& cmd, const oli::file_name& efname, char process)
 {
-  mfCmd.add_keyword_value("OPTION", "*EVENTF");
-  auto severity = mfCmd.execute();
+  cmd.add_keyword_value("OPTION", "*EVENTF");
+  auto severity = cmd.execute();
   if (process == oli::BLANK)
     return severity;
 
@@ -64,31 +67,10 @@ evfevent_method(oli::command& mfCmd, const oli::file_name& evfeventName, char pr
 }
 
 
-void
-copy_evfevent(const oli::file_name& src, char type)
+
+oli::severity_t
+joblog_method(oli::command& cmd, const oli::file_name& efname)
 {
-  // Set the name of the target member
-  auto dst = src;
-  dst.library = parms::evfevent_libarary;
-  dst.member.resize(10, '_');
-  *dst.member.rbegin() = type;
-
-  // Сopying member
-  oli::command cmd;
-  cmd = oli::format("CPYF FROMFILE(%s) FROMMBR(%s) TOFILE(%s) TOMBR(%s) "
-                    "MBROPT(*REPLACE) FMTOPT(*NOCHK) CRTFILE(*YES)",
-                    src.libq_name().c_str(), src.member.c_str(),
-                    dst.libq_name().c_str(), dst.member.c_str());
-  cmd.execute();
-
-  // Garbage removal
-  if (src.library == parms::evfevent_libarary)
-    cmd = oli::format("RMVM FILE(%s) MBR(%s)", src.libq_name().c_str(),
-                      src.member.c_str());
-  else
-    cmd = oli::format("DLTF FILE(%s)", src.libq_name().c_str());
-
-  cmd.execute();
 }
 
 } // namespace { ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -130,7 +112,7 @@ Void eventf_initialize(bool eventf_option, const char* makefile)
   }
 
 
-  // This crutch is needed to force RDi to fetch all messages from EVFEVENT, not just new ones.
+  // This crutch is needed to force RDi to fetch all messages from EVFEVENT, not just new ones
   auto tmp = "EVFEVENT00";
   auto copy = oli::format("RNMOBJ OBJ(%s/%%s) OBJTYPE(*FILE) NEWOBJ(%%s)",
                           parms::evfevent_libarary.c_str());
@@ -144,12 +126,12 @@ Void eventf_initialize(bool eventf_option, const char* makefile)
 
 
 // EXECUTE MAKEFILE COMMAND
-Int16 eventf_execute_command(const char* cmd)
+Int16 eventf_execute_command(const char* mfCmd)
 {
   // If the command has invalid syntax
-  static oli::command mfCmd;
+  static oli::command cmd;
   try {
-    mfCmd = cmd;
+    cmd = mfCmd;
   } catch (std::exception& e) {
     return EXEC_INVALID_CMD;
   }
@@ -157,7 +139,7 @@ Int16 eventf_execute_command(const char* cmd)
 
   // If *EVENTF option not set for TMKMAKE
   if (!parms::eventf_option)
-    return mfCmd.execute();
+    return cmd.execute();
 
 
   // Get CMDDEFS file description and process errors
@@ -168,23 +150,22 @@ Int16 eventf_execute_command(const char* cmd)
     currentJob = get_current_job();
   } catch (std::exception& e) {
     parms::eventf_option = false;
-    return mfCmd.execute();
+    return cmd.execute();
   }
 
 
   // If command name not in CMDDEFS file
   CMDDEFS_key_t key;
-  oli::fill_string(key.NAME, mfCmd.name());
+  oli::fill_string(key.NAME, cmd.name());
   auto cmdDef = cmddefs->find(key);
   if (cmdDef == cmddefs->end())
-    return mfCmd.execute();
+    return cmd.execute();
 
 
   // Get info of the created object
   auto parmName = oli::get_string(cmdDef->OBJECT);
-  auto qnameObj = split_qname(mfCmd.keyword_value(parmName));
-  if (qnameObj.first.empty())
-  {
+  auto qnameObj = split_qname(cmd.keyword_value(parmName));
+  if (qnameObj.first.empty()) {
     auto curlib = currentJob->current_library();
     if (curlib.empty())
       return EXEC_OBJLIB_EMPTY;
@@ -193,16 +174,36 @@ Int16 eventf_execute_command(const char* cmd)
 
 
   // Executing a command with appropriate error handling
-  oli::file_name srcEventf(qnameObj.first, "EVFEVENT", qnameObj.second);
+  oli::file_name src(qnameObj.first, parms::EVFEVENT, qnameObj.second);
   oli::severity_t severity = 0;
   if (cmdDef->METHOD == 'E')
-    severity = evfevent_method(mfCmd, srcEventf, cmdDef->PROCESS);
-//  else
-//    severity = joblog_method(mfCmd, srcEventf);
+    severity = evfevent_method(cmd, src, cmdDef->PROCESS);
+  else
+    severity = joblog_method(cmd, src);
 
 
-  //
-  copy_evfevent(srcEventf, cmdDef->TYPE);
+  // Set the name of the target member EVFEVENT
+  auto dst = src;
+  dst.library = parms::evfevent_libarary;
+  dst.member.resize(10, '_');
+  *dst.member.rbegin() = cmdDef->TYPE;
+
+
+  // Сopying member source EVFEVENT to destination
+  cmd = oli::format("CPYF FROMFILE(%s) FROMMBR(%s) TOFILE(%s) TOMBR(%s) "
+                    "MBROPT(*REPLACE) FMTOPT(*NOCHK) CRTFILE(*YES)",
+                    src.libq_name().c_str(), src.member.c_str(),
+                    dst.libq_name().c_str(), dst.member.c_str());
+  cmd.execute();
+
+
+  // Garbage removal
+  cmd = src.library == parms::evfevent_libarary ?
+        oli::format("RMVM FILE(%s) MBR(%s)", src.libq_name().c_str(), src.member.c_str()) :
+        oli::format("DLTF FILE(%s)", src.libq_name().c_str());
+  cmd.execute();
+
+
   return severity;
 }
 

@@ -256,7 +256,7 @@ struct file_name
   string library, file, member;
 
   public:
-  file_name(const string& l, const string& f, const string& m)
+  file_name(const string& l, const string& f, const string& m = "*FIRST")
   : library(l), file(f), member(m) {}
 
   string libq_name() const {
@@ -271,7 +271,7 @@ struct file_name
 
 
 //***** FILE_HANDLE CLASS DECLARATION **********************************************************************************
-namespace detail {
+namespace file_detail {
 
 class file_handle
 {
@@ -351,7 +351,7 @@ class file_handle
 
 
 //***** ITERATOR CLASS DECLARATION *************************************************************************************
-namespace detail {
+namespace file_detail {
 
 template <typename R, typename K>
 class iterator
@@ -434,11 +434,11 @@ class file
                 "Type of Key must be a class or void");
 
 
-  detail::file_handle m_file;
+  file_detail::file_handle m_file;
 
 
   public:
-  typedef detail::iterator<R, K> iterator;
+  typedef file_detail::iterator<R, K> iterator;
 
 
   file(const std::string& path, const std::string& mode = "rr")
@@ -466,6 +466,38 @@ class file
 
 
 
+//***** JOB LOG CLASS DECLARATION **************************************************************************************
+namespace job_detail {
+
+class job_log_iterator
+{
+
+};
+
+} // namespace job_detail { ////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+//***** JOB LOG CLASS DECLARATION **************************************************************************************
+namespace job_detail {
+
+class job_log
+{
+  typedef job_log_iterator iterator;
+
+  public:
+  iterator last_message() const {
+  }
+};
+
+} // namespace job_detail { ////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
 //***** CURRENT JOB CLASS DECLARATION **********************************************************************************
 namespace oli {
 
@@ -473,6 +505,7 @@ class current_job
 {
   Qwc_JOBI0700_t              m_job_info;
   std::vector<Qwc_Lib_List_t> m_libraries;
+  job_detail::job_log         m_log;
 
 
   void retrieve_job_info(void* buffer, size_t size) {
@@ -515,6 +548,11 @@ class current_job
 
     auto idx = m_job_info.Libs_In_Syslibl + m_job_info.Prod_Libs;
     return get_string(m_libraries[idx].Lib_Name);
+  }
+
+
+  job_detail::job_log log() {
+    return m_log;
   }
 };
 

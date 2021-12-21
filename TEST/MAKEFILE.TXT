@@ -4,7 +4,7 @@ dstlib = CSNTST
 
 
 all: $(dstlib)/PFFILE<FILE> +
-     $(srclib)/CMOD<MODULE>  
+     $(dstlib)/TEST<PGM>  
 
 
 $(dstlib)/PFFILE<FILE>: $(srclib)/pfsrc.TEST
@@ -19,5 +19,8 @@ $(dstlib)/PFFILE<FILE>: $(srclib)/pfsrc.TEST
 
 
 $(srclib)/CMOD<MODULE>: $(srclib)/csrc.TEST
-    CRTCMOD MODULE($(srclib)/CMOD) SRCFILE($(srclib)/TEST) SRCMBR(CSRC) +
+    CRTCMOD MODULE($(@L)/$(@F)) SRCFILE($(srclib)/TEST) SRCMBR(CSRC) +
             PFROPT(*STRDONLY) OPTION(*SHOWUSR) CHECKOUT(*COND *PARM *REACH *UNUSED)
+
+$(dstlib)/TEST<PGM>: $(srclib)/CMOD<MODULE>
+    CRTPGM PGM($(@L)/$(@F)) MODULE($(srclib)/CMOD)
