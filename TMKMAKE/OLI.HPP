@@ -271,6 +271,10 @@ struct file_name
   string libq_name() const {
     return library + '/' + file;
   }
+
+  string full_name() const {
+    return oli::format("%s(%s)", libq_name().c_str(), member.c_str());
+  }
 };
 
 } // namespace oli { ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -343,7 +347,7 @@ class file_handle
   }
 
 
-  _RFILE*& handle() {
+  _RFILE* handle() const {
     return m_handle;
   }
 
@@ -466,6 +470,13 @@ class file
 
   iterator find(const K& key, size_t key_size = sizeof(K)) {
     return iterator(m_file, key, key_size);
+  }
+
+
+  void write(R& record) const {
+    _Rwrite(m_file.handle(), &record, sizeof(R));
+    if (m_file.handle()->riofb.num_bytes != sizeof(R))
+      throw std::runtime_error(__FUNCTION__);
   }
 };
 

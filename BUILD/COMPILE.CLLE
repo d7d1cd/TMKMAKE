@@ -74,10 +74,10 @@ PGM PARM(&@SRCLIB &@DSTLIB)
 
   SNDPGMMSG  MSG('BEGIN MONITORING') KEYVAR(&LOWKEY)
   RUNSQL     SQL('insert into ' *CAT &DSTLIB *CAT '/CMDDEFS +
-                  (NAME,          OBJECT,     METHOD, TYPE,  PROCESS) values +
-                  (''CRTPF'',     ''FILE'',   ''E'',  ''F'', '' ''), +
-                  (''CRTCMOD'',   ''MODULE'', ''E'',  ''M'', '' ''), +
-                  (''CRTPGM'',    ''PGM'',    ''J'',  ''P'', '' '')  +
+                  (NAME,          OBJECT,     METHOD, TYPE) values +
+                  (''CRTPF'',     ''FILE'',   ''E'',  ''F''), +
+                  (''CRTCMOD'',   ''MODULE'', ''E'',  ''M''), +
+                  (''CRTPGM'',    ''PGM'',    ''J'',  ''P'')  +
                  ') +
              COMMIT(*NONE)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADCMDF)
@@ -469,7 +469,7 @@ PGM PARM(&@SRCLIB &@DSTLIB)
   ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
              SEV(00) LOGPRB(*NO) ALROPT(*NO) +
              FMT((*CHAR 5) (*CHAR 32)) MSGID(TMK9043) +
-             MSG('''&2'' is up-to-date in line &1.') +
+             MSG('Target ''&2'' is up-to-date in line &1.') +
              SECLVL('&N Cause . . . . . :   The specified target has been processed by TMKMAKE and is now up-to-date. +
                      &N Recovery  . . . :   None.')
 
@@ -534,16 +534,11 @@ PGM PARM(&@SRCLIB &@DSTLIB)
              ONEBYTE(*CHAR) UNIONDFN(*NONE) TYPEDEFPFX(*NONE)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADHDR)
 
-  CRTPF      FILE(&TMPLIB/EVFEVENT) RCDLEN(300) MAXMBRS(*NOMAX)
+  CRTPF      FILE(&TMPLIB/EVFEVENT) RCDLEN(500) MAXMBRS(*NOMAX)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADHDR)
 
   GENCSRC    OBJ('/QSYS.LIB/' *CAT &TMPLIB *CAT '.LIB/EVFEVENT.FILE') +
              SRCFILE(&TMPLIB/MAPINC) SLTFLD(*BOTH) +
-             ONEBYTE(*CHAR) UNIONDFN(*NONE) TYPEDEFPFX(*NONE)
-  MONMSG     MSGID(CPF0000) EXEC(GOTO BADHDR)
-
-  GENCSRC    OBJ('/QSYS.LIB/' *CAT &DSTLIB *CAT '.LIB/CMDDEFS.FILE') +
-             SRCFILE(&TMPLIB/MAPINC) SLTFLD(*BOTH *KEY) +
              ONEBYTE(*CHAR) UNIONDFN(*NONE) TYPEDEFPFX(*NONE)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADHDR)
 

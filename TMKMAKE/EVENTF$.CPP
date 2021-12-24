@@ -5,14 +5,112 @@
 #include "MAPINC/evfevent.h"
 
 #include <xxfdbk.h>
+#include <ctime>
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+//***** PRIVATE TYPES **************************************************************************************************
+namespace { namespace type {
+
+typedef std::pair<std::string, std::string> qname_t;
+
+
+typedef decltype(*oli::current_job::joblog().begin()) joblog_message;
+
+
+class evfevent
+{
+  typedef std::string string;
+  oli::file_name m_name;
+  oli::file<EVFEVENT_both_t> m_file;
+
+
+  string inspect(bool clear) {
+    const char* chkfile = "CHKOBJ OBJ(%s) OBJTYPE(*FILE) MBR(%s)";
+    oli::command cmd;
+
+    // If the EVFEVENT file is missing from the 'lib'
+    cmd = oli::format(chkfile, m_name.libq_name().c_str(), "*NONE");
+    if (cmd.execute()) {
+      cmd = oli::format("CRTPF FILE(%s) MBR(%s) RCDLEN(500) MAXMBRS(*NOMAX)",
+                        m_name.libq_name().c_str(), m_name.member.c_str());
+      cmd.execute();
+      return m_name.full_name();
+    }
+
+    // If the EVFEVENT member is missing from the file EVFEVENT
+    cmd = oli::format(chkfile, m_name.libq_name().c_str(), m_name.member.c_str());
+    if (cmd.execute()) {
+      cmd = oli::format("ADDPFM FILE(%s) MBR(%s)",
+                        m_name.libq_name().c_str(), m_name.member.c_str());
+      cmd.execute();
+      return m_name.full_name();
+    }
+
+    // If need to clear target member
+    if (clear) {
+      cmd = oli::format("CLRPFM FILE(%s) MBR(%s)",
+                        m_name.libq_name().c_str(), m_name.member.c_str());
+      cmd.execute();
+    }
+
+    return m_name.full_name();
+  }
+
+
+  public:
+  static const char* NAME;
+
+
+  evfevent(bool clear, const string& lib, const string& mbr = NAME)
+  : m_name(lib, NAME, mbr), m_file(inspect(clear), "rr+") {}
+
+
+  void add_prolog() {
+    EVFEVENT_both_t rec;
+    auto rawdt = std::time(nullptr);
+    auto ltime = std::localtime(&rawdt);
+    strftime(rec.EVFEVENT, sizeof(rec.EVFEVENT), "%Y%m%d%H%M%S", ltime);
+    std::string ts(rec.EVFEVENT);
+
+    oli::fill_string(rec.EVFEVENT, oli::format("TIMESTAMP  0 %s", ts.c_str()));
+    m_file.write(rec);
+
+    oli::fill_string(rec.EVFEVENT, "PROCESSOR  1 000 1");
+    m_file.write(rec);
+  }
+
+
+  void add_message(const joblog_message& msg) {
+    auto type = oli::get_string(msg.detail.Message_Type);
+
+    char sign = 'I';
+    if (type == "15") sign = 'E';
+    else if(type == "02")
+      sign = msg.detail.Message_Severity <= 10 ? 'W' : 'S';
+
+    auto text = oli::format("ERROR      1 000 2 000000 000000 001 000000 001 %.7s %c %02d %03d %s",
+                            msg.detail.Message_Id, sign, msg.detail.Message_Severity,
+                            msg.text.length(), msg.text.c_str());
+
+    EVFEVENT_both_t rec;
+    oli::fill_string(rec.EVFEVENT, text);
+    m_file.write(rec);
+  }
+};
+
+const char* evfevent::NAME = "EVFEVENT";
+
+}} // namespace { namespace type { /////////////////////////////////////////////////////////////////////////////////////
+
+
 
 
 
 //***** PRIVATE VARIABLE DEFINITIONS ***********************************************************************************
 namespace { namespace parms {
 
-const char* EVFEVENT = "EVFEVENT";
 bool        eventf_option;
 std::string evfevent_libarary;
 
@@ -43,8 +141,17 @@ get_current_job()
 
 
 
-typedef std::pair<std::string, std::string> qname_t;
-qname_t split_qname(const std::string& qname)
+//type::evfevent*
+//get_evfevent(const std::string& lib)
+//{
+//  static type::evfevent evfevent(true, lib);
+//  return &evfevent;
+//}
+
+
+
+type::qname_t
+split_qname(const std::string& qname)
 {
   auto s = qname.find_first_of("/");
   if (s == std::string::npos)
@@ -56,14 +163,11 @@ qname_t split_qname(const std::string& qname)
 
 
 oli::severity_t
-evfevent_method(oli::command& cmd, const oli::file_name& efname, char process)
+evfevent_method(oli::command& cmd, const oli::file_name& efname)
 {
+  // efname нужен для дальнейшей доработки - очистке получившегося EVFEVENT
   cmd.add_keyword_value("OPTION", "*EVENTF");
-  auto severity = cmd.execute();
-  if (process == oli::BLANK)
-    return severity;
-
-  return severity;
+  return cmd.execute();
 }
 
 
@@ -72,12 +176,15 @@ oli::severity_t
 joblog_method(oli::command& cmd, const oli::file_name& efname)
 {
   auto joblog   = oli::current_job::joblog();
-  auto start    = joblog.last();
+  auto it       = joblog.last();
   auto severity = cmd.execute();
-  auto finish   = joblog.end();
+  auto end      = joblog.last();
 
+  type::evfevent evfevent(true, efname.library, efname.member);
+  evfevent.add_prolog();
 
-
+  while (++it != end)
+    evfevent.add_message(*it);
 
   return severity;
 }
@@ -110,25 +217,24 @@ Void eventf_initialize(bool eventf_option, const char* makefile)
 
 
   // Create EVFEVENT if doesn't exist
-  oli::command cmd;
-  auto qname = parms::evfevent_libarary + '/' + parms::EVFEVENT;
-  cmd = oli::format("CHKOBJ OBJ(%s) OBJTYPE(*FILE)", qname.c_str());
-
-  if (cmd.execute()) {
-    cmd = oli::format("CRTPF FILE(%s) RCDLEN(500) MAXMBRS(*NOMAX)", qname.c_str());
-    if (cmd.execute()) parms::eventf_option = false;
+  try {
+    type::evfevent evfevent(true, parms::evfevent_libarary);
+    evfevent.add_prolog();
+  } catch (std::exception& e) {
+    parms::eventf_option = false;
     return;
   }
 
 
   // This crutch is needed to force RDi to fetch all messages from EVFEVENT, not just new ones
-  auto tmp = "EVFEVENT00";
+  auto tmp = std::string(type::evfevent::NAME) + "00";
   auto copy = oli::format("RNMOBJ OBJ(%s/%%s) OBJTYPE(*FILE) NEWOBJ(%%s)",
                           parms::evfevent_libarary.c_str());
 
-  cmd = oli::format(copy.c_str(), parms::EVFEVENT, tmp);
+  oli::command cmd;
+  cmd = oli::format(copy.c_str(), type::evfevent::NAME, tmp.c_str());
   cmd.execute();
-  cmd = oli::format(copy.c_str(), tmp, parms::EVFEVENT);
+  cmd = oli::format(copy.c_str(), tmp.c_str(), type::evfevent::NAME);
   cmd.execute();
 }
 
@@ -183,10 +289,10 @@ Int16 eventf_execute_command(const char* mfCmd)
 
 
   // Executing a command with appropriate error handling
-  oli::file_name src(qnameObj.first, parms::EVFEVENT, qnameObj.second);
+  oli::file_name src(qnameObj.first, type::evfevent::NAME, qnameObj.second);
   oli::severity_t severity = 0;
   if (cmdDef->METHOD == 'E')
-    severity = evfevent_method(cmd, src, cmdDef->PROCESS);
+    severity = evfevent_method(cmd, src);
   else
     severity = joblog_method(cmd, src);
 

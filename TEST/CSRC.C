@@ -1,8 +1,10 @@
 #include <stdio.h>
 
+void foo(void);
+
 int main(void)
 {
-  int a;
+  //foo();
   printf("Message from 'CMOD'module\n");
   return 0;
 }
