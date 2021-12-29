@@ -141,15 +141,6 @@ get_current_job()
 
 
 
-//type::evfevent*
-//get_evfevent(const std::string& lib)
-//{
-//  static type::evfevent evfevent(true, lib);
-//  return &evfevent;
-//}
-
-
-
 type::qname_t
 split_qname(const std::string& qname)
 {
@@ -322,5 +313,16 @@ Int16 eventf_execute_command(const char* mfCmd)
   return severity;
 }
 
+
+
+// ADD LAST JOBLOG MESSAGE TO EVFEVENT
+Void eventf_add_message(void)
+{
+  if (!parms::eventf_option)
+    return;
+
+  static type::evfevent evfevent(false, parms::evfevent_libarary);
+  evfevent.add_message(*oli::current_job::joblog().last());
+}
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

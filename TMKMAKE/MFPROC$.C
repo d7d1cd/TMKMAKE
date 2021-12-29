@@ -647,8 +647,11 @@ Void process_makefile(Void)
   {
     // make the target and its dependents recursively
     make_target(make_rule);
+
     // log message about the target is up-to-date
     log_error(TARGET_UP_TO_DATE, make_rule->target->name, make_rule->line);
+    eventf_add_message();
+
     // get next target specified in the STRMAKE command
     make_rule = get_next_applied_target();
   }

@@ -14,6 +14,7 @@ extern "C" {
 
 Void  eventf_initialize(bool, const char*);                   // using in option$.c
 Int16 eventf_execute_command(const char*);                    // using in mfproc$.c
+Void  eventf_add_message(void);                               // using in mfproc$.c
 
 #ifdef __cplusplus
 } // extern "C" {
