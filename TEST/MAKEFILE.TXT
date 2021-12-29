@@ -1,0 +1,26 @@
+# 
+srclib = CSNSRC
+dstlib = CSNTST
+
+
+all: $(dstlib)/PFFILE<FILE> +
+     $(dstlib)/TEST<PGM>  
+
+
+$(dstlib)/PFFILE<FILE>: $(srclib)/pfsrc.TEST
+   -DLTOBJ OBJ($(@L)/$(@F)) OBJTYPE(*$(@T)) RMVMSG(*YES)
+    CRTPF  FILE($(@L)/$(@F)) SRCFILE($(srclib)/TEST) SRCMBR(PFSRC) +
+           SIZE(*NOMAX) LVLCHK(*NO) WAITFILE(*IMMED) WAITRCD(60) SHARE(*NO) +
+           REUSEDLT(*NO) MAXMBRS(*NOMAX)
+    RUNSQL SQL('insert into $(@L)/$(@F) values +
+                (''ANG''), (''AVB''), (''MAA''), (''CSN''), (''KMA''), (''RGA''), (''ZMA'') +
+               ') +
+           COMMIT(*NONE)                
+
+
+$(srclib)/CMOD<MODULE>: $(srclib)/csrc.TEST
+    CRTCMOD MODULE($(@L)/$(@F)) SRCFILE($(srclib)/TEST) SRCMBR(CSRC) +
+            PFROPT(*STRDONLY) OPTION(*SHOWUSR) CHECKOUT(*COND *PARM *REACH *UNUSED)
+
+$(dstlib)/TEST<PGM>: $(srclib)/CMOD<MODULE>
+    CRTPGM PGM($(@L)/$(@F)) MODULE($(srclib)/CMOD)

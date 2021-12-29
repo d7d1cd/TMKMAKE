@@ -16,11 +16,11 @@ PGM PARM(&@SRCLIB &@DSTLIB)
   /* ВНУТРЕННИЕ ПЕРЕМЕННЫЕ ****************************************************/
   DCL        VAR(&TAG)        TYPE(*LGL)           VALUE('0')
   DCL        VAR(&SRCLIB)     TYPE(*CHAR) LEN(10)  VALUE(CSNSRC)                /* Библиотека с файлом исходного кода */
-  DCL        VAR(&SRCFIL)     TYPE(*CHAR) LEN(10)  VALUE(TMKMAKE)               /* Файл исходного кода */
   DCL        VAR(&DSTLIB)     TYPE(*CHAR) LEN(10)  VALUE(TMKMAKE)               /* Библиотека для размещения собранных объектов */
   DCL        VAR(&TMPLIB)     TYPE(*CHAR) LEN(10)  VALUE(QTEMP)                 /* Временная библиотека */
   DCL        VAR(&DBGMOD)     TYPE(*CHAR) LEN(10)  VALUE(*ALL)                  /* Режим отладки */
   DCL        VAR(&DEFINE)     TYPE(*CHAR) LEN(80)  VALUE(' ')                   /* Макросы компиляции */
+  DCL        VAR(&OPTMOD)     TYPE(*INT)  LEN(2)                                /* Уровень оптимизации */
   DCL        VAR(&LOWKEY)     TYPE(*CHAR) LEN(4)
   DCL        VAR(&MSGKEY)     TYPE(*CHAR) LEN(4)
   DCL        VAR(&HIKEY)      TYPE(*CHAR) LEN(4)
@@ -43,8 +43,11 @@ PGM PARM(&@SRCLIB &@DSTLIB)
   MONMSG     MSGID(CPF0000)
   DLTMSGF    MSGF(&DSTLIB/TMKMSGF)
   MONMSG     MSGID(CPF0000)
+  DLTF       FILE(&DSTLIB/CMDDEFS)
+  MONMSG     MSGID(CPF0000)
   DLTF       FILE(&DSTLIB/QMAKSRC)
   MONMSG     MSGID(CPF0000)
+
 
 
 
@@ -54,11 +57,30 @@ PGM PARM(&@SRCLIB &@DSTLIB)
   SNDPGMMSG  MSG('BEGIN MONITORING') KEYVAR(&LOWKEY)
 
   CRTSRCPF   FILE(&DSTLIB/QMAKSRC) RCDLEN(240) TEXT('Make tool built-in')
-  MONMSG     MSGID(CPF0000) EXEC(GOTO BADFILE)
+  MONMSG     MSGID(CPF0000) EXEC(GOTO BADBUILTIN)
 
-  CPYSRCF    FROMFILE(&SRCLIB/&SRCFIL) FROMMBR(BUILTINMF) +
+  CPYSRCF    FROMFILE(&SRCLIB/TMKMAKE) FROMMBR(BUILTINMF) +
              TOFILE(&DSTLIB/QMAKSRC) TOMBR(BUILTIN)
-  MONMSG     MSGID(CPF0000) EXEC(GOTO BADFILE)
+  MONMSG     MSGID(CPF0000) EXEC(GOTO BADBUILTIN)
+
+
+
+
+  /* СОЗДАНИЕ И ЗАПОЛНЕНИЕ ФАЙЛА ОПИСАНИЯ КОМАНД ******************************/
+  CRTPF      FILE(&DSTLIB/CMDDEFS) SRCFILE(&SRCLIB/TMKMAKE) +
+             OPTION(*EVENTF *NOSRC *NOLIST) SIZE(*NOMAX) +
+             WAITFILE(*IMMED) LVLCHK(*NO)
+  MONMSG     MSGID(CPF0000) EXEC(GOTO BADCMDF)
+
+  SNDPGMMSG  MSG('BEGIN MONITORING') KEYVAR(&LOWKEY)
+  RUNSQL     SQL('insert into ' *CAT &DSTLIB *CAT '/CMDDEFS +
+                  (NAME,          OBJECT,     METHOD, TYPE) values +
+                  (''CRTPF'',     ''FILE'',   ''E'',  ''F''), +
+                  (''CRTCMOD'',   ''MODULE'', ''E'',  ''M''), +
+                  (''CRTPGM'',    ''PGM'',    ''J'',  ''P'')  +
+                 ') +
+             COMMIT(*NONE)
+  MONMSG     MSGID(CPF0000) EXEC(GOTO BADCMDF)
 
 
 
@@ -358,9 +380,9 @@ PGM PARM(&@SRCLIB &@DSTLIB)
   ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
              SEV(00) LOGPRB(*NO) ALROPT(*NO) +
              FMT((*CHAR 5)) MSGID(TMK9032) +
-             MSG('Invalid command syntax in line &1; rejected by QCMDEXC.') +
-             SECLVL('&N Cause . . . . . :   The command text passed to QCMDEXC was rejected due to invalid command +
-                     syntax. &N Recovery  . . . :   Correct the invalid command sequences in the description file +
+             MSG('Invalid command syntax in line &1.') +
+             SECLVL('&N Cause . . . . . :   The command text has invalid syntax. +
+                     &N Recovery  . . . :   Correct the invalid command sequences in the description file +
                      and try again.')
 
   ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
@@ -447,7 +469,7 @@ PGM PARM(&@SRCLIB &@DSTLIB)
   ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
              SEV(00) LOGPRB(*NO) ALROPT(*NO) +
              FMT((*CHAR 5) (*CHAR 32)) MSGID(TMK9043) +
-             MSG('''&2'' is up-to-date in line &1.') +
+             MSG('Target ''&2'' is up-to-date in line &1.') +
              SECLVL('&N Cause . . . . . :   The specified target has been processed by TMKMAKE and is now up-to-date. +
                      &N Recovery  . . . :   None.')
 
@@ -482,60 +504,114 @@ PGM PARM(&@SRCLIB &@DSTLIB)
                      character in output translation macro format. &N Recovery  . . . :   Correct the invalid macro +
                      syntax and try again.')
 
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 1000)) MSGID(TMK9048) +
+             MSG('Wrong number of parameters') +
+             SECLVL('&N Cause . . . . . :   Incorrect number of parameters passed to the program. +
+                     &N Recovery  . . . :   Run the program using the TMKMAKE command.')
+
+  ADDMSGD    MSGF(&DSTLIB/TMKMSGF) LVL(*CURRENT 01) DMPLST(*NONE) +
+             SEV(00) LOGPRB(*NO) ALROPT(*NO) +
+             FMT((*CHAR 5)) MSGID(TMK9049) +
+             MSG('No library specified to create the object in line &1.') +
+             SECLVL('&N Cause . . . . . :   The create object command did not specify a placement +
+                     library and the current job library is *CRTDFT. +
+                     &N Recovery  . . . :   Specify the library to place the object in the command, +
+                     or specify the current job library.')
+
+
+
+
+  /* ИЗВЛЕЧЕНИЕ СТРУКТУР ФАЙЛОВ ************************************************/
+  CRTSRCPF   FILE(&TMPLIB/MAPINC) RCDLEN(240)
+  MONMSG     MSGID(CPF0000)
+
+  SNDPGMMSG  MSG('BEGIN MONITORING') KEYVAR(&LOWKEY)
+
+  GENCSRC    OBJ('/QSYS.LIB/' *CAT &DSTLIB *CAT '.LIB/CMDDEFS.FILE') +
+             SRCFILE(&TMPLIB/MAPINC) SLTFLD(*BOTH *KEY) +
+             ONEBYTE(*CHAR) UNIONDFN(*NONE) TYPEDEFPFX(*NONE)
+  MONMSG     MSGID(CPF0000) EXEC(GOTO BADHDR)
+
+  CRTPF      FILE(&TMPLIB/EVFEVENT) RCDLEN(500) MAXMBRS(*NOMAX)
+  MONMSG     MSGID(CPF0000) EXEC(GOTO BADHDR)
+
+  GENCSRC    OBJ('/QSYS.LIB/' *CAT &TMPLIB *CAT '.LIB/EVFEVENT.FILE') +
+             SRCFILE(&TMPLIB/MAPINC) SLTFLD(*BOTH) +
+             ONEBYTE(*CHAR) UNIONDFN(*NONE) TYPEDEFPFX(*NONE)
+  MONMSG     MSGID(CPF0000) EXEC(GOTO BADHDR)
+
 
 
 
   /* КОМПИЛЯЦИЯ МОДУЛЕЙ *******************************************************/
-  CHGLIBL    LIBL(*NONE)
+  CHGLIBL    LIBL(&TMPLIB)
 
-  CRTCMOD    MODULE(&TMPLIB/MAIN) SRCFILE(&SRCLIB/&SRCFIL) SRCMBR(MAIN$) +
-             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTION(*EVENTF) +
-             PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
+  CRTCPPMOD  MODULE(&TMPLIB/EVENTF) SRCFILE(&SRCLIB/TMKMAKE) SRCMBR(EVENTF$) +
+             DBGVIEW(&DBGMOD) OPTIMIZE(&OPTMOD) +
+             OPTION(*EVENTF *SHOWUSR) PFROPT(*STRDONLY) LANGLVL(*EXTENDED0X) +
+             CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
-  CRTCMOD    MODULE(&TMPLIB/MFPROC) SRCFILE(&SRCLIB/&SRCFIL) SRCMBR(MFPROC$) +
-             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTION(*EVENTF) +
-             PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
+  CRTCMOD    MODULE(&TMPLIB/MAIN) SRCFILE(&SRCLIB/TMKMAKE) SRCMBR(MAIN$) +
+             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTIMIZE(&OPTMOD) +
+             OPTION(*EVENTF) PFROPT(*STRDONLY) +
+             CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
-  CRTCMOD    MODULE(&TMPLIB/PARSER) SRCFILE(&SRCLIB/&SRCFIL) SRCMBR(PARSER$) +
-             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTION(*EVENTF) +
-             PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
+  CRTCMOD    MODULE(&TMPLIB/MFPROC) SRCFILE(&SRCLIB/TMKMAKE) SRCMBR(MFPROC$) +
+             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTIMIZE(&OPTMOD) +
+             OPTION(*EVENTF) PFROPT(*STRDONLY) +
+             CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
-  CRTCMOD    MODULE(&TMPLIB/FILE) SRCFILE(&SRCLIB/&SRCFIL) SRCMBR(FILE$) +
-             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTION(*EVENTF) +
-             PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
+  CRTCMOD    MODULE(&TMPLIB/PARSER) SRCFILE(&SRCLIB/TMKMAKE) SRCMBR(PARSER$) +
+             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTIMIZE(&OPTMOD) +
+             OPTION(*EVENTF) PFROPT(*STRDONLY) +
+             CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
-  CRTCMOD    MODULE(&TMPLIB/BUILTIN) SRCFILE(&SRCLIB/&SRCFIL) SRCMBR(BUILTIN$) +
-             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTION(*EVENTF) +
-             PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
+  CRTCMOD    MODULE(&TMPLIB/FILE) SRCFILE(&SRCLIB/TMKMAKE) SRCMBR(FILE$) +
+             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTIMIZE(&OPTMOD) +
+             OPTION(*EVENTF) PFROPT(*STRDONLY) +
+             CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
-  CRTCMOD    MODULE(&TMPLIB/MSGHANDLE) SRCFILE(&SRCLIB/&SRCFIL) SRCMBR(MSGHANDLE$) +
-             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTION(*EVENTF) +
-             PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
+  CRTCMOD    MODULE(&TMPLIB/BUILTIN) SRCFILE(&SRCLIB/TMKMAKE) SRCMBR(BUILTIN$) +
+             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTIMIZE(&OPTMOD) +
+             OPTION(*EVENTF) PFROPT(*STRDONLY) +
+             CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
-  CRTCMOD    MODULE(&TMPLIB/DICTION) SRCFILE(&SRCLIB/&SRCFIL) SRCMBR(DICTION$) +
-             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTION(*EVENTF) +
-             PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
+  CRTCMOD    MODULE(&TMPLIB/MSGHANDLE) SRCFILE(&SRCLIB/TMKMAKE) SRCMBR(MSGHANDLE$) +
+             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTIMIZE(&OPTMOD) +
+             OPTION(*EVENTF) PFROPT(*STRDONLY) +
+             CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
-  CRTCMOD    MODULE(&TMPLIB/OPTION) SRCFILE(&SRCLIB/&SRCFIL) SRCMBR(OPTION$) +
-             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTION(*EVENTF) +
-             PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
+  CRTCMOD    MODULE(&TMPLIB/DICTION) SRCFILE(&SRCLIB/TMKMAKE) SRCMBR(DICTION$) +
+             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTIMIZE(&OPTMOD) +
+             OPTION(*EVENTF) PFROPT(*STRDONLY) +
+             CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
-  CRTCMOD    MODULE(&TMPLIB/UTILITY) SRCFILE(&SRCLIB/&SRCFIL) SRCMBR(UTILITY$) +
-             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTION(*EVENTF) +
-             PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
+  CRTCMOD    MODULE(&TMPLIB/OPTION) SRCFILE(&SRCLIB/TMKMAKE) SRCMBR(OPTION$) +
+             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTIMIZE(&OPTMOD) +
+             OPTION(*EVENTF) PFROPT(*STRDONLY) +
+             CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
-  CRTCMOD    MODULE(&TMPLIB/EXPR) SRCFILE(&SRCLIB/&SRCFIL) SRCMBR(EXPR$) +
-             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTION(*EVENTF) +
-             PFROPT(*STRDONLY) CHECKOUT(*COND *PARM *REACH *UNUSED)
+  CRTCMOD    MODULE(&TMPLIB/UTILITY) SRCFILE(&SRCLIB/TMKMAKE) SRCMBR(UTILITY$) +
+             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTIMIZE(&OPTMOD) +
+             OPTION(*EVENTF) PFROPT(*STRDONLY) +
+             CHECKOUT(*COND *PARM *REACH *UNUSED)
+  MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
+
+  CRTCMOD    MODULE(&TMPLIB/EXPR) SRCFILE(&SRCLIB/TMKMAKE) SRCMBR(EXPR$) +
+             DBGVIEW(&DBGMOD) DEFINE(&DEFINE) OPTIMIZE(&OPTMOD) +
+             OPTION(*EVENTF) PFROPT(*STRDONLY) +
+             CHECKOUT(*COND *PARM *REACH *UNUSED)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADMOD)
 
 
@@ -547,7 +623,7 @@ PGM PARM(&@SRCLIB &@DSTLIB)
 
   CRTPGM     PGM(&DSTLIB/TMKMAKE) +
              MODULE(MAIN MFPROC PARSER FILE BUILTIN MSGHANDLE +
-                    DICTION OPTION UTILITY EXPR)
+                    DICTION OPTION UTILITY EXPR EVENTF)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADBUILD)
 
 
@@ -558,7 +634,7 @@ PGM PARM(&@SRCLIB &@DSTLIB)
   SNDPGMMSG  MSG('BEGIN MONITORING') KEYVAR(&LOWKEY)
 
   CRTCMD     CMD(&DSTLIB/TMKMAKE) PGM(&DSTLIB/TMKMAKE) +
-             SRCFILE(&SRCLIB/&SRCFIL) PMTFILE(&DSTLIB/TMKMSGF) +
+             SRCFILE(&SRCLIB/TMKMAKE) PMTFILE(&DSTLIB/TMKMSGF) +
              OPTION(*EVENTF)
   MONMSG     MSGID(CPF0000) EXEC(GOTO BADBUILD)
 
@@ -572,14 +648,24 @@ PGM PARM(&@SRCLIB &@DSTLIB)
              MSGDTA('Done successful!')
   GOTO       FINALLY
 
-  BADFILE:                                                                      /* Не удалось создать файл встроенных макросов */
+  BADBUILTIN:                                                                   /* Не удалось создать файл встроенных макросов */
   SNDPGMMSG  MSGID(CPA2401) MSGF(QCPFMSG) MSGTYPE(*DIAG) +
              MSGDTA('Built-in file create failed...')
+  GOTO       FINALLY
+
+  BADCMDF:                                                                      /* Не удалось создать файл с описанием команд */
+  SNDPGMMSG  MSGID(CPA2401) MSGF(QCPFMSG) MSGTYPE(*DIAG) +
+             MSGDTA('Command definition file create failed...')
   GOTO       FINALLY
 
   BADMSGF:                                                                      /* Не удалось создать файл сообщений */
   SNDPGMMSG  MSGID(CPA2401) MSGF(QCPFMSG) MSGTYPE(*DIAG) +
              MSGDTA('Message file create failed...')
+  GOTO       FINALLY
+
+  BADHDR:                                                                       /* Не удалось создать заголовочный файл */
+  SNDPGMMSG  MSGID(CPA2401) MSGF(QCPFMSG) MSGTYPE(*DIAG) +
+             MSGDTA('Header file create failed...')
   GOTO       FINALLY
 
   BADMOD:                                                                       /* Не удалось выполнить компиляцию модуля */
@@ -665,6 +751,11 @@ PGM PARM(&@SRCLIB &@DSTLIB)
   DLTF       FILE(&TMPLIB/EVFEVENT)
   MONMSG     MSGID(CPF0000)
 
+  IF (&DBGMOD = *NONE) DO
+    DLTF       FILE(&SRCLIB/EVFEVENT)
+    MONMSG     MSGID(CPF0000)
+  ENDDO
+
 
 
   /* ПОДПРОЦЕДУРА ИНИЦИАЛИЗАЦИИ ************************************************/
@@ -688,6 +779,13 @@ PGM PARM(&@SRCLIB &@DSTLIB)
 
   DLTF       FILE(&TMPLIB/EVFEVENT)
   MONMSG     MSGID(CPF0000)
+
+  IF (&DBGMOD = *ALL) DO
+    CHGVAR VAR(&OPTMOD) VALUE(10)
+    ENDDO
+  ELSE DO
+    CHGVAR VAR(&OPTMOD) VALUE(40)
+  ENDDO
 
   CHGLIBL    LIBL(*NONE) CURLIB(*CRTDFT)                                        /* Очистка либла */
 

@@ -24,6 +24,7 @@
 #include "option"
 #include "msghandle"
 #include "sysapi"
+#include "eventf"
 
 #if 0
 #include "fdebug.h"
@@ -321,98 +322,77 @@ Void setup_command_macro(Void)
   }
 }
 
-/* ================================================================= */
-/*  Function:    process_options ()                                  */
-/* ================================================================= */
 
-Void process_options(Char **argv)
+// =================================================================
+//  Function:    process_options ()
+// =================================================================
+Void process_options(int argc, Char** argv)
 {
-  Int16 cnt;
-  Int16 i;
-  int txtsz; /* int to match printf("%*") type */
-  Char *cp;
+  int txtsz; // int to match printf("%*") type
   Void (*old_signal_fct)(int);
   Void *np = NULL;
 
-#ifdef SRVOPT
+  #ifdef SRVOPT
   set_srvopt(argv[ARGV_SRVOPT]);
-
   if (srvopt_function())
     printf("FCT:process_options(%d,Char *argv)\n", argc);
-#endif
-  /* process options                                            */
-  cnt = *(Int16 *)argv[ARGV_OPTIONS];
-  cp = argv[ARGV_OPTIONS] + 2;
-  for (i = 0; i < cnt; ++i)
-  {
+
+  assert(0);
+  // Если будет использован макрос SRVOPT, то необходимо
+  // сделать правильную обработку числа параметров в коде ниже
+  #endif
+
+  // check parms count
+  if (argc != 10)
+    log_error_and_exit(WRONG_PARMS, NULL, MSG_NO_LINE_NO);
+
+  // process options
+  Int16 cnt = *(Int16*)argv[ARGV_OPTIONS];
+  Char* cp  = argv[ARGV_OPTIONS] + 2;
+  for (Int16 i = 0; i < cnt; ++i, ++cp)
     switch (*cp)
     {
-    case 'J': /* NOIGNORE */
-      options &= ~OPT_IGNORE;
-      break;
-    case 'I': /* IGNORE   */
-      options |= OPT_IGNORE;
-      break;
-    case 'V': /* NOSILENT */
-      options &= ~OPT_SILENT;
-      break;
-    case 'S': /* SILENT */
-      options |= OPT_SILENT;
-      break;
-    case 'C': /* NOBIRULES */
-      options |= OPT_NOBIRULES;
-      break;
-    case 'B': /* BIRULES */
-      options &= ~OPT_NOBIRULES;
-      break;
-    case 'F': /* NOEXEC */
-      options |= OPT_NOEXEC;
-      break;
-    case 'E': /* EXEC */
-      options &= ~OPT_NOEXEC;
-      break;
-    case 'U': /* NOTOUCH */
-      options &= ~OPT_TOUCH;
-      break;
-    case 'T': /* TOUCH */
-      options |= OPT_TOUCH;
-      break;
-    case 'X': /* NODEBUG */
-      options &= ~OPT_DEBUG;
-      break;
-    case 'D': /* DEBUG */
-      options |= OPT_DEBUG;
-      break;
-    case 'Y': /* NOEXCEPT */
-      options &= ~OPT_EXCEPT;
-      break;
-    case 'Z': /* EXCEPT */
-      options |= OPT_EXCEPT;
-      break;
+      case 'J': options &= ~OPT_IGNORE;    break;    // *NOIGNORE
+      case 'I': options |=  OPT_IGNORE;    break;    // *IGNORE
+      case 'V': options &= ~OPT_SILENT;    break;    // *NOSILENT
+      case 'S': options |=  OPT_SILENT;    break;    // *SILENT
+      case 'C': options |=  OPT_NOBIRULES; break;    // *NOBIRULES
+      case 'B': options &= ~OPT_NOBIRULES; break;    // *BIRULES
+      case 'F': options |=  OPT_NOEXEC;    break;    // *NOEXEC
+      case 'E': options &= ~OPT_NOEXEC;    break;    // *EXEC
+      case 'U': options &= ~OPT_TOUCH;     break;    // *NOTOUCH
+      case 'T': options |=  OPT_TOUCH;     break;    // *TOUCH
+      case 'X': options &= ~OPT_DEBUG;     break;    // *NODEBUG
+      case 'D': options |=  OPT_DEBUG;     break;    // *DEBUG
+      case 'Y': options &= ~OPT_EXCEPT;    break;    // *NOEXCEPT
+      case 'Z': options |=  OPT_EXCEPT;    break;    // *EXCEPT
+      case 'H': options &= ~OPT_EVENTF;    break;    // *NOEVENTF
+      case 'G': options |=  OPT_EVENTF;    break;    // *EVENTF
     }
-    ++cp;
-  }
-#ifdef SRVOPT
+
+  #ifdef SRVOPT
   if (srvopt_detail())
     printf("DTL:process_option:option flag = %04.4x\n",
            options);
-#endif
-  /* process target field                                      */
+  #endif
+
+  // process target field
   cnt = *(Int16 *)argv[ARGV_TARGET];
   cp = argv[ARGV_TARGET] + 2;
 
-#ifdef SRVOPT
+  #ifdef SRVOPT
   if (srvopt_detail())
     printf("DTL:process_option:target count = %d\n", cnt);
-#endif
-  for (i = 0; i < cnt; ++i)
+  #endif
+
+  for (Int16 i = 0; i < cnt; ++i)
   {
     Targ_list_t *tlp;
 
     if (strncmp(cp, CMDF_TARGET_DEFAULT,
                 sizeof(CMDF_TARGET_DEFAULT) - 1) == 0)
     {
-      /* skip *FIRST target name for default */
+      // skip *FIRST target name for default
       continue;
     }
 
@@ -423,7 +403,7 @@ Void process_options(Char **argv)
     memcpy(tlp->txt, cp, txtsz);
     tlp->txt[txtsz] = 0;
 
-    /* put the new target at end of target list */
+    // put the new target at end of target list
     tlp->nxt = NULL;
     if (tlist == NULL)
     {
@@ -444,23 +424,24 @@ Void process_options(Char **argv)
     cp += CMDF_TARGET;
   }
 
-  /* process makefile definition                               */
+  // process makefile definition
   cp = argv[ARGV_SRCFILE] + CMDF_LIBFILE / 2;
   txtsz = skip_trail_spaces_sz(cp, CMDF_LIBFILE / 2);
   memcpy(makefile_name, cp, txtsz);
   cp = makefile_name + txtsz;
   *cp++ = '/';
-  txtsz = skip_trail_spaces_sz(argv[2], CMDF_LIBFILE / 2);
+  txtsz = skip_trail_spaces_sz(argv[ARGV_SRCFILE], CMDF_LIBFILE / 2);
   memcpy(cp, argv[ARGV_SRCFILE], txtsz);
   cp += txtsz;
   *cp = 0;
-  makefile_mbr = cp; /* remember member insertion point*/
+  makefile_mbr = cp; // remember member insertion point
 
-  /* build the makefile member list from command input         */
+
+  // build the makefile member list from command input
   if (strncmp(argv[ARGV_SRCMBR], "*ALL", 4) == 0)
   {
-    Mbr_list_t *mlp; /* makefile mbr list tmp ptr    */
-    mbrl0100 *mli;   /* System API member output list*/
+    Mbr_list_t *mlp; // makefile mbr list tmp ptr
+    mbrl0100 *mli;   // System API member output list
     header_struct *list_header;
     Int32 mbr_count;
 
@@ -487,12 +468,12 @@ Void process_options(Char **argv)
       log_error(TOO_MANY_MBR, makefile_mbr + 1, MSG_NO_LINE_NO);
     }
 
-#ifdef SRVOPT
+    #ifdef SRVOPT
     if (srvopt_detail())
       printf("DTL:process_option:member list, count = %d\n",
              mbr_count);
-/* DBG_DP((char *)mli, 40 ); */
-#endif
+    #endif
+
     if (mbr_count == 0)
     {
       log_error_and_exit(ALL_NO_MBR, makefile_name, MSG_NO_LINE_NO);
@@ -508,7 +489,7 @@ Void process_options(Char **argv)
       mlp->txt[txtsz] = 0;
       mlp->nxt = NULL;
 
-      /* put the new target at end of target list */
+      // put the new target at end of target list
       if (mlist == NULL)
       {
         np = mlp;
@@ -546,22 +527,20 @@ Void process_options(Char **argv)
     log_dbg(txtbuf);
   }
 
-  /* remember the marco definition from command for later       */
-  /*  processing                                                */
+  // remember the marco definition from command for later
+  //  processing
   macro_argv = argv[ARGV_MACRO];
 
-  /* process Margin definitions                                 */
+  // process Margin definitions
   src_left_margin = *(((Int16 *)argv[ARGV_MARGINS]) + 1);
   src_right_margin = *(((Int16 *)argv[ARGV_MARGINS]) + 2);
 
-#ifdef SRVOPT
+  #ifdef SRVOPT
   if (srvopt_detail())
     printf("DTL:process_option:"
            "Source Margin: left = %d,  right = %d\n",
            src_left_margin, src_right_margin);
-
-    /* DBG_DP((char *)argv[ARGV_MARGINS], 16 );                */
-#endif
+  #endif
 
   if (src_left_margin >= src_right_margin)
   {
@@ -569,25 +548,26 @@ Void process_options(Char **argv)
     src_left_margin = 0;
   }
 
-  /* process Return Code Handling definitions                   */
+  // process Return Code Handling definitions
   rtncde_handling = *(((Int16 *)argv[ARGV_RTNCDE]) + 1);
   rtncde_severity = *(((Int16 *)argv[ARGV_RTNCDE]) + 2);
 
-#ifdef SRVOPT
+  #ifdef SRVOPT
   if (srvopt_detail())
     printf("DTL:process_option:"
            "rtncde handling: method = %d, severity = %d\n",
            rtncde_handling, rtncde_severity);
+  #endif
 
-    /* DBG_DP((char *)argv[ARGV_RTNCDE], 16 ); */
-#endif
-
-  /* process User Message Logging definitions                   */
+  // process User Message Logging definitions
   if (argv[ARGV_USRMSG][0] == 'S')
-  {
     set_usrmsg_to_session();
-  }
+
+
+  // Initializing the EVFEVENT create file option
+  eventf_initialize(options & OPT_EVENTF, makefile_name);
 }
+
 
 /* ================================================================= */
 /*  Function:    get_first_requested_target ()                       */
@@ -737,3 +717,4 @@ Boolean opt_except(void)
 {
   return (options & OPT_EXCEPT);
 }
+
