@@ -9,7 +9,7 @@
 #include <string>
 #include <qcmdexc.h>
 #include <qcmdchk.h>
-#include <algorithm>
+#include <cctype>
 #include <recio.h>
 #include <qusrjobi.h>
 #include <qmhrcvpm.h>
@@ -206,8 +206,13 @@ class command
   public:
   command& operator=(const char* rhs) {
     m_command = rhs;
-    auto begin = m_command.begin();
-    std::transform(begin, m_command.end(), begin, toupper);
+    bool apo = false;
+
+    for (auto it = m_command.begin(), end = m_command.end(); it != end; ++it) {
+      if (*it == '\'') apo = !apo;
+      if (!apo) *it = std::toupper(*it);
+    }
+
     check_syntax();
     return *this;
   }
