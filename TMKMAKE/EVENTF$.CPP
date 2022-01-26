@@ -126,7 +126,7 @@ namespace {
 oli::file<CMDDEFS_both_t, CMDDEFS_key_t>*
 get_cmddefs()
 {
-  static oli::file<CMDDEFS_both_t, CMDDEFS_key_t> cmddefs("*LIBL/CMDDEFS");
+  static oli::file<CMDDEFS_both_t, CMDDEFS_key_t> cmddefs("TMKMAKE/CMDDEFS");
   return &cmddefs;
 }
 

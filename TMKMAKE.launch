@@ -6,16 +6,16 @@
 <stringAttribute key="com.ibm.etools.systems.as400.debug.ui.connection.connectionName." value="PUB400"/>
 <stringAttribute key="com.ibm.etools.systems.as400.debug.ui.connection.profileName." value="MONOBLOK"/>
 <listAttribute key="com.ibm.etools.systems.as400.debug.ui.debugProgram.debuggees">
-<listEntry value="*PGM *LIBL/TMKMAKE"/>
+<listEntry value="*PGM TMKMAKE/TMKMAKE"/>
 </listAttribute>
-<stringAttribute key="com.ibm.etools.systems.as400.debug.ui.debugProgram.library." value="*LIBL"/>
+<stringAttribute key="com.ibm.etools.systems.as400.debug.ui.debugProgram.library." value="TMKMAKE"/>
 <stringAttribute key="com.ibm.etools.systems.as400.debug.ui.debugProgram.name." value="TMKMAKE"/>
 <booleanAttribute key="com.ibm.etools.systems.as400.debug.ui.debugProgram.terminate." value="true"/>
 <stringAttribute key="com.ibm.etools.systems.as400.debug.ui.debugProgram.type." value="*PGM"/>
 <stringAttribute key="com.ibm.etools.systems.as400.debug.ui.error.advancedTab" value=""/>
 <stringAttribute key="com.ibm.etools.systems.as400.debug.ui.error.debuggeInfoTab" value=""/>
 <stringAttribute key="com.ibm.etools.systems.as400.debug.ui.error.launchInfoTab" value=""/>
-<stringAttribute key="com.ibm.etools.systems.as400.debug.ui.launchCommand.LaunchCommandName" value="SBMJOB CMD(TMKMAKE SRCFILE(CSNSRC/TEST) SRCMBR(MAKEFILE) OPTION(*EVENTF)) INLLIBL(*CURRENT) MSGQ(*NONE)"/>
+<stringAttribute key="com.ibm.etools.systems.as400.debug.ui.launchCommand.LaunchCommandName" value="SBMJOB CMD(TMKMAKE/TMKMAKE MAKETARG('tgt1') SRCFILE(CSNSRC/TEST) SRCMBR(MAKEFILE) OPTION(*EVENTF)) INLLIBL(*NONE) MSGQ(*NONE)"/>
 <listAttribute key="org.eclipse.debug.ui.favoriteGroups">
 <listEntry value="org.eclipse.debug.ui.launchGroup.debug"/>
 </listAttribute>

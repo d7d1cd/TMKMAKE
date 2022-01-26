@@ -68,7 +68,7 @@
 #define WRONG_PARMS "TMK9048"
 #define INV_OBJLIB_EMPTY "TMK9049"
 
-#define MSGF_PATH "TMKMSGF   *LIBL     "
+#define MSGF_PATH "TMKMSGF   TMKMAKE   "
 #define MSG_TXT_SZ 3000
 #define MSG_LINE_NO_SZ 5
 #define MSG_NO_LINE_NO 0

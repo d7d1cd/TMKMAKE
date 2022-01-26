@@ -109,7 +109,7 @@ Void read_qmaksrc_builtin(Void)
   if (!opt_no_built_in_rule())
   {
     /* try to load the *CURLIB/QMAKSRC(BUILTIN) first         */
-    if (parse_makefile("*CURLIB/QMAKSRC(BUILTIN)",
+    if (parse_makefile("TMKMAKE/QMAKSRC(BUILTIN)",
                        PARSE_BUILTIN) == 0)
     {
       /* try to load the *LIBL/QMAKSRC(BUILTIN)             */

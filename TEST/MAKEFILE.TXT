@@ -24,10 +24,3 @@ $(srclib)/CMOD<MODULE>: $(srclib)/csrc.TEST
 
 $(dstlib)/TEST<PGM>: $(srclib)/CMOD<MODULE>
     CRTPGM PGM($(@L)/$(@F)) MODULE($(srclib)/CMOD)
-
-    
-    
-    
-    
-tgt1:
-   @echo test target
